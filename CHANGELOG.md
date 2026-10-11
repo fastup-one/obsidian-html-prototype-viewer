@@ -19,4 +19,10 @@ First release of the strict fork, based on upstream 1.0.1 (`f9922b8`).
 - Spanish interface.
 - In-repo SHA-256; unit tests with `node:test`; self-checking fixtures, a test-vault builder and a
   harness that drives a real Obsidian.
-- No release workflow: this fork is not published.
+- Packaging: a deterministic zip (`npm run package`) with the plugin folder, an English-first
+  installation guide (Markdown in English and Spanish, bilingual HTML), a self-checking
+  `isolation-check.html` and `SHA256SUMS`.
+- CI on every push and a tag-triggered release workflow that creates a **draft** release with the
+  package and a build-provenance attestation; actions pinned to commit SHAs, no install scripts.
+- Forbidden-API sweep of the bundle (`npm run check`), with exceptions only through `packaging.json`.
+- Test fixtures and the test vault are English first, with an EN/ES switch.

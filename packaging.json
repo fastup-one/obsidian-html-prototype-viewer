@@ -1,0 +1,9 @@
+{
+	"files": {
+		"INSTALL.md": "docs/INSTALL.md",
+		"INSTALL.es.md": "docs/INSTALL.es.md",
+		"INSTALL.html": "docs/INSTALL.html",
+		"isolation-check.html": "test/fixtures/vault/02-isolation.html"
+	},
+	"bundleAllow": []
+}

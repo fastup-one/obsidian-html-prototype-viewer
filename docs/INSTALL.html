@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Install HTML Prototype Viewer (Strict)</title>
+<!-- Self-contained on purpose: no external resources. English is shown by default, even without scripts;
+     the EN/ES switch only toggles which language is visible. It renders fully in the plugin's isolated mode. -->
+<style>
+	:root {
+		--bg: #f7f7f5;
+		--surface: #ffffff;
+		--text: #1d1d1f;
+		--muted: #5f6368;
+		--border: #e2e2de;
+		--accent: #5b4bd6;
+		--accent-soft: #eeebff;
+		--green: #0a7d32;
+		--green-soft: #e6f4ea;
+		--amber: #a15c00;
+		--amber-soft: #fff3e0;
+		--red: #b00020;
+		--code-bg: #f0f0ec;
+	}
+	@media (prefers-color-scheme: dark) {
+		:root {
+			--bg: #1b1b1d;
+			--surface: #242427;
+			--text: #ececec;
+			--muted: #a7a7ad;
+			--border: #36363b;
+			--accent: #a99bff;
+			--accent-soft: #2c2843;
+			--green: #57c27a;
+			--green-soft: #1d3326;
+			--amber: #f0a948;
+			--amber-soft: #3a2c17;
+			--red: #ff7a8a;
+			--code-bg: #2d2d31;
+		}
+	}
+	/* Language: English unless Spanish is selected. */
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+
+	* { box-sizing: border-box; }
+	html { scroll-behavior: smooth; }
+	body {
+		margin: 0;
+		background: var(--bg);
+		color: var(--text);
+		font: 16px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+	}
+	main { max-width: 760px; margin: 0 auto; padding: 28px 16px 64px; }
+	.top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+	h1 { font-size: 1.75rem; line-height: 1.25; margin: 0 0 8px; }
+	h2 { font-size: 1.2rem; margin: 0 0 12px; display: flex; align-items: center; gap: 10px; }
+	.num {
+		display: inline-grid;
+		place-items: center;
+		width: 28px;
+		height: 28px;
+		border-radius: 50%;
+		background: var(--accent);
+		color: var(--surface);
+		font-size: 0.9rem;
+		flex: none;
+	}
+	.meta { color: var(--muted); margin: 0; }
+	.badge {
+		display: inline-block;
+		padding: 2px 10px;
+		border-radius: 999px;
+		background: var(--accent-soft);
+		color: var(--accent);
+		font-size: 0.85rem;
+		font-weight: 600;
+	}
+	.langsw { display: flex; gap: 4px; flex: none; }
+	.langsw button {
+		font: 600 0.8rem/1 inherit;
+		padding: 6px 10px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+		color: var(--text);
+		cursor: pointer;
+	}
+	.langsw button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+	nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 28px; }
+	nav a {
+		padding: 6px 12px;
+		border: 1px solid var(--border);
+		border-radius: 8px;
+		background: var(--surface);
+		color: var(--text);
+		text-decoration: none;
+		font-size: 0.9rem;
+	}
+	nav a:hover { border-color: var(--accent); }
+	section {
+		background: var(--surface);
+		border: 1px solid var(--border);
+		border-radius: 12px;
+		padding: 20px;
+		margin-bottom: 16px;
+	}
+	ol, ul { padding-left: 1.4em; margin: 0; }
+	li { margin: 6px 0; }
+	p { margin: 0 0 10px; }
+	p:last-child { margin-bottom: 0; }
+	code {
+		font: 0.88em/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		background: var(--code-bg);
+		padding: 1px 6px;
+		border-radius: 5px;
+		word-break: break-word;
+	}
+	table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+	th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+	th { color: var(--muted); font-weight: 600; }
+	.note { border-radius: 10px; padding: 12px 14px; margin-top: 12px; border: 1px solid transparent; }
+	.note.green { background: var(--green-soft); border-color: var(--green); }
+	.note.amber { background: var(--amber-soft); border-color: var(--amber); }
+	.ok { color: var(--green); font-weight: 700; }
+	.warn { color: var(--amber); font-weight: 700; }
+	.bad { color: var(--red); font-weight: 700; }
+	.key { font-weight: 600; }
+	footer { color: var(--muted); font-size: 0.85rem; text-align: center; margin-top: 24px; }
+	@media (max-width: 480px) {
+		main { padding-top: 18px; }
+		h1 { font-size: 1.45rem; }
+		section { padding: 16px; }
+		.top { flex-direction: column-reverse; }
+	}
+</style>
+</head>
+<body>
+<main>
+	<div class="top">
+		<div>
+			<h1><span class="en">Install HTML Prototype Viewer (Strict)</span><span class="es">Instalar HTML Prototype Viewer (Strict)</span></h1>
+			<p class="meta"><span class="badge">{{version}}</span>&nbsp;
+				<span class="en">Requires Obsidian 1.13 or newer (Settings → About).</span>
+				<span class="es">Necesitas Obsidian 1.13 o posterior (Ajustes → Acerca de).</span></p>
+		</div>
+		<div class="langsw" role="group" aria-label="Language · Idioma">
+			<button type="button" data-l="en" aria-pressed="true">EN</button>
+			<button type="button" data-l="es" aria-pressed="false">ES</button>
+		</div>
+	</div>
+
+	<nav>
+		<a href="#package"><span class="en">Package</span><span class="es">Paquete</span></a>
+		<a href="#computer"><span class="en">Computer</span><span class="es">Ordenador</span></a>
+		<a href="#trust"><span class="en">Trust</span><span class="es">Confianza</span></a>
+		<a href="#phone"><span class="en">Phone</span><span class="es">Móvil</span></a>
+		<a href="#back"><span class="en">Going back</span><span class="es">Volver atrás</span></a>
+		<a href="#check"><span class="en">Checking</span><span class="es">Comprobar</span></a>
+		<a href="#summary"><span class="en">In short</span><span class="es">Resumen</span></a>
+	</nav>
+
+	<section id="package">
+		<h2><span class="en">What is in the package</span><span class="es">Qué hay en el paquete</span></h2>
+		<table>
+			<tr><th><span class="en">File</span><span class="es">Archivo</span></th><th><span class="en">Purpose</span><span class="es">Para qué</span></th></tr>
+			<tr><td><code>html-prototype-viewer-strict/</code></td><td>
+				<span class="en">The plugin (<code>main.js</code>, <code>manifest.json</code>, <code>styles.css</code>). This is what you install.</span>
+				<span class="es">El plugin (<code>main.js</code>, <code>manifest.json</code>, <code>styles.css</code>). Es lo que se instala.</span></td></tr>
+			<tr><td><code>isolation-check.html</code></td><td>
+				<span class="en">A page that tells you by itself whether isolation works.</span>
+				<span class="es">Una página que dice sola si el aislamiento funciona.</span></td></tr>
+			<tr><td><code>SHA256SUMS</code></td><td>
+				<span class="en">Fingerprints of every file in the package.</span>
+				<span class="es">Las huellas de todos los archivos del paquete.</span></td></tr>
+			<tr><td><code>INSTALL.*</code></td><td>
+				<span class="en">This guide (Markdown in English and Spanish, and this HTML page).</span>
+				<span class="es">Esta guía (Markdown en inglés y en español, y esta página HTML).</span></td></tr>
+		</table>
+	</section>
+
+	<section id="computer">
+		<h2><span class="num">1</span><span class="en">Install on your computer</span><span class="es">Instalar en el ordenador</span></h2>
+		<ol class="en">
+			<li>Get the package onto the computer where your Obsidian lives — download it from the GitHub release, or copy it however you like (USB, cloud, email to yourself) — and unzip it.</li>
+			<li>In Obsidian, open your vault and go to <span class="key">Settings → Community plugins</span>.</li>
+			<li>Next to «Installed plugins», click the <span class="key">folder icon</span>: your vault's <code>plugins</code> folder opens.</li>
+			<li>Copy the <code>html-prototype-viewer-strict</code> folder from the package into it (the whole folder).</li>
+			<li>Back in Obsidian, click the <span class="key">reload icon</span> (circular arrow) next to «Installed plugins».</li>
+			<li>Enable <span class="key">HTML Prototype Viewer (Strict)</span>.</li>
+			<li><span class="key">Disable HTML Prototype Viewer</span> (the original). Do not delete it: that way you can go back whenever you want.</li>
+			<li>Open any HTML file in your vault: above the page there must be a shield and the word <span class="key">Isolated</span>.</li>
+		</ol>
+		<ol class="es">
+			<li>Lleva el paquete al ordenador donde está tu Obsidian — descárgalo de la release de GitHub, o cópialo como prefieras (USB, nube, correo a ti mismo) — y descomprímelo.</li>
+			<li>En Obsidian, abre tu vault y ve a <span class="key">Ajustes → Complementos comunitarios</span>.</li>
+			<li>Junto a «Complementos instalados», pulsa el <span class="key">icono de la carpeta</span>: se abre la carpeta <code>plugins</code> de tu vault.</li>
+			<li>Copia dentro la carpeta <code>html-prototype-viewer-strict</code> del paquete (la carpeta entera).</li>
+			<li>Vuelve a Obsidian y pulsa el <span class="key">icono de recargar</span> (la flecha circular) junto a «Complementos instalados».</li>
+			<li>Activa <span class="key">HTML Prototype Viewer (Strict)</span>.</li>
+			<li><span class="key">Desactiva HTML Prototype Viewer</span> (el original). No lo borres: así puedes volver atrás cuando quieras.</li>
+			<li>Abre cualquier HTML de tu vault: encima de la página debe aparecer un escudo y la palabra <span class="key">Aislado</span>.</li>
+		</ol>
+	</section>
+
+	<section id="trust">
+		<h2><span class="num">2</span><span class="en">Your trusted HTML files</span><span class="es">Tus HTML de confianza</span></h2>
+		<ul class="en">
+			<li>Every HTML file opens <span class="key">isolated</span>: no access to your vault and no internet. For most pages that is enough.</li>
+			<li>If one of your HTML files needs to remember things (progress, settings), use the internet or load files from its folder: open it, click the <span class="key">shield</span> at the top, then <span class="key">Trust</span>.</li>
+			<li>If that file changes (for example, you regenerate it), it goes back to isolated and tells you. Trust it again if you still want it that way.</li>
+			<li>The list of trusted files, and the buttons to revoke them, are in <span class="key">Settings → HTML Prototype Viewer (Strict)</span>.</li>
+		</ul>
+		<ul class="es">
+			<li>Todo HTML se abre <span class="key">aislado</span>: sin acceso a tu vault ni a internet. Para la mayoría basta.</li>
+			<li>Si un HTML tuyo necesita recordar cosas (progreso, parámetros), usar internet o cargar archivos de su carpeta: ábrelo, pulsa el <span class="key">escudo</span> de arriba y luego <span class="key">Confiar</span>.</li>
+			<li>Si ese archivo cambia (por ejemplo, lo regeneras), vuelve a aislado y te lo avisa. Si lo sigues queriendo así, vuelve a confiar.</li>
+			<li>La lista de archivos de confianza, y los botones para retirarlos, están en <span class="key">Ajustes → HTML Prototype Viewer (Strict)</span>.</li>
+		</ul>
+		<div class="note amber">
+			<span class="en">Trust travels with the vault: a file you trust on the computer is also trusted on the phone.</span>
+			<span class="es">La confianza viaja con el vault: lo que confíes en el ordenador también será de confianza en el móvil.</span>
+		</div>
+	</section>
+
+	<section id="phone">
+		<h2><span class="num">3</span><span class="en">On your phone</span><span class="es">En el móvil</span></h2>
+		<p class="en">The plugin reaches the phone through your vault's sync:</p>
+		<p class="es">El plugin llega al móvil con la sincronización de tu vault:</p>
+		<ul class="en">
+			<li><span class="key">Obsidian Sync:</span> in the Sync settings, turn on syncing of installed community plugins and of the active plugin list.</li>
+			<li><span class="key">Other sync</span> (iCloud, Syncthing, Git…): the hidden <code>.obsidian</code> folder travels with the vault; nothing else to do.</li>
+		</ul>
+		<ul class="es">
+			<li><span class="key">Obsidian Sync:</span> en los ajustes de Sync, activa que se sincronicen los complementos comunitarios instalados y la lista de complementos activos.</li>
+			<li><span class="key">Otra sincronización</span> (iCloud, Syncthing, Git…): la carpeta oculta <code>.obsidian</code> viaja con el vault; no hay que hacer nada más.</li>
+		</ul>
+		<p class="en" style="margin-top:10px">Then, on the phone: <span class="key">Settings → Community plugins</span> → enable <span class="key">HTML Prototype Viewer (Strict)</span> and disable the original.</p>
+		<p class="es" style="margin-top:10px">Después, en el móvil: <span class="key">Ajustes → Complementos comunitarios</span> → activa <span class="key">HTML Prototype Viewer (Strict)</span> y desactiva el original.</p>
+		<div class="note green">
+			<p class="en"><strong>The one remaining check</strong> (2 minutes):</p>
+			<p class="es"><strong>La única comprobación que falta</strong> (2 minutos):</p>
+			<ol class="en">
+				<li>Copy <code>isolation-check.html</code> into your vault and open it on the <strong>phone</strong>. It must show <span class="ok">🟢 GREEN</span>.</li>
+				<li>Click the shield → <span class="key">Trust</span>. Tell me whether it shows <span class="warn">🟠 AMBER</span> or <span class="bad">🔴 RED</span>. Red means that on the phone a trusted file can see your vault: not a bug, but worth knowing when you decide what to trust.</li>
+				<li>Click the shield again to revoke the trust. You can delete the file afterwards.</li>
+			</ol>
+			<ol class="es">
+				<li>Copia <code>isolation-check.html</code> a tu vault y ábrelo en el <strong>móvil</strong>. Debe salir <span class="ok">🟢 VERDE</span>.</li>
+				<li>Pulsa el escudo → <span class="key">Confiar</span>. Dime si sale <span class="warn">🟠 ÁMBAR</span> o <span class="bad">🔴 ROJO</span>. Rojo significa que en el móvil un archivo de confianza puede ver tu vault: no es un fallo, pero hay que saberlo para decidir en qué confías.</li>
+				<li>Pulsa el escudo otra vez para retirar la confianza. Después puedes borrar el archivo.</li>
+			</ol>
+		</div>
+	</section>
+
+	<section id="back">
+		<h2><span class="num">4</span><span class="en">Going back</span><span class="es">Volver atrás</span></h2>
+		<p class="en">Disable <span class="key">HTML Prototype Viewer (Strict)</span> and enable the original. That is all.</p>
+		<p class="es">Desactiva <span class="key">HTML Prototype Viewer (Strict)</span> y activa el original. Nada más.</p>
+	</section>
+
+	<section id="check">
+		<h2><span class="num">5</span><span class="en">Checking the package</span><span class="es">Comprobar el paquete</span> <span class="meta">(optional · opcional)</span></h2>
+		<p class="en"><code>SHA256SUMS</code> lists the SHA-256 of every file in the package. On macOS, in Terminal, inside the unzipped folder, <code>shasum -a 256 -c SHA256SUMS</code> must answer <code>OK</code> for every line.</p>
+		<p class="es"><code>SHA256SUMS</code> contiene la huella SHA-256 de cada archivo del paquete. En macOS, desde la Terminal, dentro de la carpeta descomprimida, <code>shasum -a 256 -c SHA256SUMS</code> debe responder <code>OK</code> en cada línea.</p>
+		<p class="en">Packages built by GitHub also carry a signed build-provenance attestation, which proves the zip was built from the repository by its release workflow: <code>gh attestation verify &lt;zip&gt; --repo &lt;owner&gt;/&lt;repo&gt;</code>.</p>
+		<p class="es">Los paquetes que genera GitHub llevan además una atestación firmada de procedencia, que prueba que el zip se construyó desde el repositorio con su workflow de release: <code>gh attestation verify &lt;zip&gt; --repo &lt;propietario&gt;/&lt;repo&gt;</code>.</p>
+	</section>
+
+	<section id="summary">
+		<h2><span class="en">In short: what it does</span><span class="es">Qué hace, en resumen</span></h2>
+		<ul class="en">
+			<li><span class="key">Isolated</span> (always, unless you trust the file): the page cannot touch Obsidian or your vault, has no internet, cannot store data, open windows, show dialogs or download files. A line above the page explains what was blocked.</li>
+			<li><span class="key">Trusted</span> (only files you choose, and only while they stay unchanged): shown as in the original plugin. Above it, <span class="warn">Not isolated · trusted file</span>.</li>
+			<li><span class="key">Remaining risk:</span> a page can still try to send itself to a website; that one request leaves. The plugin stops the page and shows a notice — except when it happens while the page is still loading.</li>
+			<li>What must never happen: a blank page with no explanation. If you see one, report it.</li>
+		</ul>
+		<ul class="es">
+			<li><span class="key">Aislado</span> (siempre, salvo que confíes en el archivo): la página no puede tocar Obsidian ni tu vault, no tiene internet, no guarda datos, no abre ventanas, no muestra diálogos ni descarga archivos. Encima de la página se explica qué se ha bloqueado.</li>
+			<li><span class="key">De confianza</span> (solo los archivos que tú elijas, y solo mientras no cambien): se ve como en el plugin original. Encima aparece <span class="warn">Sin aislamiento · archivo de confianza</span>.</li>
+			<li><span class="key">Riesgo que queda:</span> una página puede intentar irse a otra web; esa petición sale. El plugin la detiene y muestra un aviso, salvo si lo hace mientras la página aún se está cargando.</li>
+			<li>Lo que nunca debe pasar: una página en blanco sin explicación. Si la ves, avísame.</li>
+		</ul>
+	</section>
+
+	<footer>
+		<span class="en">HTML Prototype Viewer (Strict) · hardened fork of HTML Prototype Viewer (Renan Gautier, MIT)</span>
+		<span class="es">HTML Prototype Viewer (Strict) · fork endurecido de HTML Prototype Viewer (Renan Gautier, MIT)</span>
+	</footer>
+</main>
+<script>
+	// EN/ES switch. The choice is not stored: isolated pages cannot store anything, and English is the default.
+	document.querySelectorAll(".langsw button").forEach(function (button) {
+		button.addEventListener("click", function () {
+			var lang = button.getAttribute("data-l") === "es" ? "es" : "en";
+			document.documentElement.setAttribute("data-lang", lang);
+			document.documentElement.lang = lang;
+			document.querySelectorAll(".langsw button").forEach(function (b) { b.setAttribute("aria-pressed", String(b === button)); });
+		});
+	});
+</script>
+</body>
+</html>

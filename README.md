@@ -49,11 +49,14 @@ Trusting the file brings all of that back.
 
 ## Installation
 
-This fork is not published in the community directory. Copy `main.js`, `manifest.json` and
-`styles.css` into `<vault>/.obsidian/plugins/html-prototype-viewer-strict/` (Settings → Community
-plugins → folder icon opens that `plugins` folder), reload the list and enable
-**HTML Prototype Viewer (Strict)**. Disable the original **HTML Prototype Viewer**: only one view
-can own the `.html` extension. Requires Obsidian 1.13 or newer.
+This fork is not published in the community directory. It ships as a zip package
+(`html-prototype-viewer-strict-<version>.zip`) with the plugin folder, an installation guide in
+English and Spanish (`INSTALL.md`, `INSTALL.es.md`, `INSTALL.html`), a self-checking
+`isolation-check.html` and `SHA256SUMS`. In short: copy the `html-prototype-viewer-strict` folder
+into `<vault>/.obsidian/plugins/` (Settings → Community plugins → folder icon), reload the list,
+enable **HTML Prototype Viewer (Strict)** and disable the original **HTML Prototype Viewer** — only
+one view can own the `.html` extension. Requires Obsidian 1.13 or newer. The full guide is in
+[docs/INSTALL.md](docs/INSTALL.md).
 
 ## Features
 
@@ -109,7 +112,23 @@ npm ci --ignore-scripts   # dependency install scripts never run
 npm run dev               # watch build
 npm run build             # type-check, then production bundle
 npm test                  # type-check, then unit tests (node:test)
+npm run check             # tests, build and forbidden-API sweep of main.js (scripts/check-bundle.mjs)
+npm run package           # deterministic zip package in dist/ (scripts/package.mjs; --out <dir> to change)
 ```
+
+`packaging.json` lists the extra files of the package and any approved exception to the bundle
+sweep. The package is byte-for-byte reproducible: the same commit gives the same zip hash on any
+machine.
+
+## Releases
+
+Pushing a tag equal to `manifest.json`'s version (no `v` prefix, e.g. `1.0.1-strict.1`) runs
+`.github/workflows/release.yml`: tests, build, sweep, package, a signed build-provenance attestation
+and a **draft** GitHub release with the zip and the plugin files. Nothing becomes public until the
+draft is published by hand; collaborators can download it from the Releases page. Before installing,
+compare the release zip's SHA-256 with the one of a local `npm run package` from the same commit.
+`.github/workflows/ci.yml` runs the same checks on every push. Actions are pinned to commit SHAs and
+install scripts never run.
 
 Desktop checks in a real Obsidian, on a throwaway vault and an isolated profile (Linux, needs
 `Xvfb` and the `obsidian` binary; DevTools on 127.0.0.1 only):

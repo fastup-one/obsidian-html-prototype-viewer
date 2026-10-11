@@ -7,6 +7,8 @@
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
 		"test": "tsc -noEmit -skipLibCheck && node esbuild.test.mjs && node --test test-dist/*.test.mjs",
+		"check": "npm test && npm run build && node scripts/check-bundle.mjs",
+		"package": "node scripts/package.mjs",
 		"install-local": "node scripts/install-local.mjs"
 	},
 	"devDependencies": {

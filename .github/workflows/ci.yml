@@ -1,0 +1,32 @@
+name: CI
+
+# Every push and pull request: tests, build, forbidden-API sweep of the bundle and a
+# packaging dry run. Read-only token; actions pinned to commit SHAs; dependency install
+# scripts never run.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions: {}
+
+jobs:
+  check:
+    name: Test, build, sweep and package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - name: Install dependencies from the lockfile, without install scripts
+        run: npm ci --ignore-scripts
+      - name: Test, build and sweep the bundle
+        run: npm run check
+      - name: Package (dry run)
+        run: npm run package
