@@ -66,7 +66,8 @@ enviarlas por internet. Por eso el móvil solo deja confiar en un archivo en el 
 exactamente el mismo contenido**. Las aprobaciones del ordenador viajan en `approvals.json`, dentro de la carpeta del
 plugin. En el móvil vuelves a confirmar, marcando una casilla, y el archivo lleva la etiqueta **Acceso completo al vault
 · archivo de confianza**. Si el archivo cambia, o retiras la confianza en el ordenador, el móvil vuelve a mostrarlo
-aislado (en 30 segundos).
+aislado (en 30 segundos). Retirarla en el ordenador también anula la confirmación del móvil: para volver a confiar allí,
+confía en el ordenador y vuelve a confirmar en el móvil.
 
 **Compruébalo** (2 minutos), con `isolation-check.html` en tu vault:
 
@@ -74,7 +75,8 @@ aislado (en 30 segundos).
 2. En el ordenador: escudo → **Confiar**. Espera a la sincronización.
 3. En el móvil: escudo → marca la casilla → **Confiar**. Sale **🔴 ROJO** con la etiqueta roja: es lo esperado, eso es
    el acceso completo.
-4. En el ordenador: escudo otra vez (retirar). En 30 segundos el móvil vuelve a **🟢 VERDE**.
+4. En el ordenador: escudo otra vez (retirar). En 30 segundos el móvil vuelve a **🟢 VERDE**, con un aviso de que tu
+   ordenador retiró su aprobación. Volver a confiar en el móvil exige otra vez los dos pasos.
 
 ### Actualizar
 

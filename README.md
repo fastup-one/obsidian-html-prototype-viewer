@@ -27,7 +27,8 @@ This fork:
   the whole vault (verified on an iPhone). So a phone can only trust a file that the desktop app already trusted with
   the same content: the desktop writes `approvals.json` (SHA-256 of each trusted content) next to the plugin, the
   vault's sync carries it, and the phone checks it on every render and every 30 seconds. The phone still asks for its
-  own confirmation, with a required checkbox, and labels the file «Full vault access · trusted file».
+  own confirmation, with a required checkbox, and labels the file «Full vault access · trusted file». A withdrawn
+  approval also cancels the phone's own confirmation: trusting again needs both steps again.
 - **Reviews before trusting.** The trust dialog lists what the file does — reaching for the surrounding window or
   Obsidian's API, network hosts, storage, dynamic or obfuscated code. A static check, not a guarantee.
 - **Has no global switch** to turn isolation off. The upstream `Strict isolation` setting is

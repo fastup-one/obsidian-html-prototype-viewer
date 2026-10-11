@@ -242,8 +242,8 @@
 		<p class="en" style="margin-top:10px">Only this plugin's files travel; its settings and the phone's own trust list (<code>data.json</code>) stay on each device.</p>
 		<p class="es" style="margin-top:10px">Solo viajan los archivos de este plugin; sus ajustes y la lista de confianza propia del móvil (<code>data.json</code>) se quedan en cada dispositivo.</p>
 		<div class="note amber">
-			<p class="en"><strong>Trust on the phone needs your computer.</strong> On a phone, a trusted file gets <strong>full access to your vault</strong>: it can read, change and delete your notes and send them over the internet. So the phone only lets you trust a file that your computer already trusted with exactly the same content (the approvals travel in <code>approvals.json</code>). The phone then asks again, with a checkbox, and labels it <strong>Full vault access · trusted file</strong>. If the file changes, or you revoke it on the computer, the phone shows it isolated again within 30 seconds.</p>
-			<p class="es"><strong>La confianza en el móvil necesita tu ordenador.</strong> En el móvil, un archivo de confianza obtiene <strong>acceso completo a tu vault</strong>: puede leer, cambiar y borrar tus notas y enviarlas por internet. Por eso el móvil solo deja confiar en un archivo en el que tu ordenador ya confió con exactamente el mismo contenido (las aprobaciones viajan en <code>approvals.json</code>). El móvil vuelve a preguntar, con una casilla, y lo etiqueta <strong>Acceso completo al vault · archivo de confianza</strong>. Si el archivo cambia, o retiras la confianza en el ordenador, el móvil vuelve a mostrarlo aislado en 30 segundos.</p>
+			<p class="en"><strong>Trust on the phone needs your computer.</strong> On a phone, a trusted file gets <strong>full access to your vault</strong>: it can read, change and delete your notes and send them over the internet. So the phone only lets you trust a file that your computer already trusted with exactly the same content (the approvals travel in <code>approvals.json</code>). The phone then asks again, with a checkbox, and labels it <strong>Full vault access · trusted file</strong>. If the file changes, or you revoke it on the computer, the phone shows it isolated again within 30 seconds. Revoking on the computer also cancels the phone's own confirmation: to trust it there again, trust it on the computer and confirm again on the phone.</p>
+			<p class="es"><strong>La confianza en el móvil necesita tu ordenador.</strong> En el móvil, un archivo de confianza obtiene <strong>acceso completo a tu vault</strong>: puede leer, cambiar y borrar tus notas y enviarlas por internet. Por eso el móvil solo deja confiar en un archivo en el que tu ordenador ya confió con exactamente el mismo contenido (las aprobaciones viajan en <code>approvals.json</code>). El móvil vuelve a preguntar, con una casilla, y lo etiqueta <strong>Acceso completo al vault · archivo de confianza</strong>. Si el archivo cambia, o retiras la confianza en el ordenador, el móvil vuelve a mostrarlo aislado en 30 segundos. Retirarla en el ordenador también anula la confirmación del móvil: para volver a confiar allí, confía en el ordenador y vuelve a confirmar en el móvil.</p>
 		</div>
 		<div class="note green">
 			<p class="en"><strong>Check it</strong> (2 minutes), with <code>isolation-check.html</code> in your vault:</p>
@@ -252,13 +252,13 @@
 				<li>On the phone: <span class="ok">🟢 GREEN</span>. Click the shield: a message says to trust it on your computer first.</li>
 				<li>On the computer: shield → <span class="key">Trust</span>. Wait for the sync.</li>
 				<li>On the phone: shield → tick the checkbox → <span class="key">Trust</span>. It shows <span class="bad">🔴 RED</span> with the red label: expected, that is what full access means.</li>
-				<li>On the computer: shield again (revoke). Within 30 seconds the phone shows <span class="ok">🟢 GREEN</span> again.</li>
+				<li>On the computer: shield again (revoke). Within 30 seconds the phone shows <span class="ok">🟢 GREEN</span> again, with a message that your computer withdrew its approval. Trusting it again on the phone needs both steps again.</li>
 			</ol>
 			<ol class="es">
 				<li>En el móvil: <span class="ok">🟢 VERDE</span>. Pulsa el escudo: un aviso te dice que primero confíes en él en tu ordenador.</li>
 				<li>En el ordenador: escudo → <span class="key">Confiar</span>. Espera a la sincronización.</li>
 				<li>En el móvil: escudo → marca la casilla → <span class="key">Confiar</span>. Sale <span class="bad">🔴 ROJO</span> con la etiqueta roja: es lo esperado, eso es el acceso completo.</li>
-				<li>En el ordenador: escudo otra vez (retirar). En 30 segundos el móvil vuelve a <span class="ok">🟢 VERDE</span>.</li>
+				<li>En el ordenador: escudo otra vez (retirar). En 30 segundos el móvil vuelve a <span class="ok">🟢 VERDE</span>, con un aviso de que tu ordenador retiró su aprobación. Volver a confiar en el móvil exige otra vez los dos pasos.</li>
 			</ol>
 		</div>
 		<p class="en" style="margin-top:12px"><span class="key">Updating:</span> replace the three files in the computer's plugin folder with the new version's; the sync carries them to the phone. Then restart Obsidian on both devices.</p>

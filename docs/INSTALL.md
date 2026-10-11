@@ -62,7 +62,8 @@ On a phone, a trusted file gets **full access to your vault**: it can read, chan
 over the internet. So the phone only lets you trust a file that **your computer already trusted with exactly the same
 content**. The computer's approvals travel in `approvals.json`, inside the plugin folder. On the phone you then confirm
 again, ticking a checkbox, and the file is labelled **Full vault access · trusted file**. If the file changes, or you
-revoke it on the computer, the phone shows it isolated again (within 30 seconds).
+revoke it on the computer, the phone shows it isolated again (within 30 seconds). Revoking on the computer also cancels
+the phone's own confirmation: to trust the file there again, trust it on the computer and confirm again on the phone.
 
 **Check it** (2 minutes), with `isolation-check.html` in your vault:
 
@@ -70,7 +71,8 @@ revoke it on the computer, the phone shows it isolated again (within 30 seconds)
 2. On the computer: shield → **Trust**. Wait for the sync.
 3. On the phone: shield → tick the checkbox → **Trust**. It shows **🔴 RED** and the red label: expected, that is what
    full access means.
-4. On the computer: shield again (revoke). Within 30 seconds the phone shows it **🟢 GREEN** again.
+4. On the computer: shield again (revoke). Within 30 seconds the phone shows it **🟢 GREEN** again, with a message that
+   your computer withdrew its approval. Trusting it again on the phone needs both steps again.
 
 ### Updating
 

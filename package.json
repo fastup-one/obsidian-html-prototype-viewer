@@ -1,6 +1,6 @@
 {
 	"name": "html-prototype-viewer-strict",
-	"version": "1.0.1-strict.2",
+	"version": "1.0.1-strict.3",
 	"description": "Hardened fork of HTML Prototype Viewer: HTML files open isolated and without network by default.",
 	"main": "main.js",
 	"scripts": {

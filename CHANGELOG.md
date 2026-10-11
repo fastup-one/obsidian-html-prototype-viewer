@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.1-strict.3
+
+- On the phone, a withdrawn desktop approval also cancels the phone's own confirmation (with a message). Approving the
+  same content again on the desktop no longer restores trust on the phone by itself: it asks for the checkbox again.
+- The desktop's trusted label explains that trusting there also approves the file for the phone.
+
 ## 1.0.1-strict.2
 
 - On the mobile app, trust needs the desktop's approval of the exact same content: the desktop writes
