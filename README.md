@@ -1,24 +1,59 @@
-# HTML Prototype Viewer
+# HTML Prototype Viewer (Strict)
 
-Preview HTML files stored in your vault, rendered in a real browser context instead of
-being injected into Obsidian's DOM.
+A hardened fork of [HTML Prototype Viewer](https://github.com/gloumi/obsidian-html-prototype-viewer)
+(1.0.1, MIT) by Renan Gautier. It previews HTML files stored in your vault in an iframe — and
+treats every one of them as untrusted until you decide otherwise.
 
-Useful if you keep design mockups, exported artifacts, or standalone HTML prototypes
-alongside your notes.
+## Strict fork: what changes and why
 
-## Why an iframe
+HTML in a vault can come from anyone: exports, downloads, synced folders. The original plugin
+runs it with the iframe's `allow-same-origin` by default, and its optional strict mode shows a
+blank frame on desktop (Obsidian does not serve `app://` URLs to an opaque-origin frame).
 
-Plugins that render local HTML by inserting it into the Obsidian document leak the
-prototype's global CSS (`body`, `:root`, `*`, `h1`…) into the app's own interface, and
-have to block scripts to stay safe.
+This fork:
 
-This plugin loads the file into an `<iframe>` instead. The prototype gets its own
-document, its own stylesheet scope and its own script context — nothing bleeds into
-Obsidian, and JavaScript simply works.
+- **Isolates every HTML file by default.** The file is read and loaded through `srcdoc` into a
+  sandbox with only `allow-scripts` and `allow-forms`: an opaque origin with no access to
+  Obsidian or your vault.
+- **Cuts the network for isolated files.** A Content-Security-Policy is injected before any of
+  the file's content: no `fetch`/XHR/WebSocket, no remote scripts, styles, fonts, images or
+  frames, no form submissions. New windows, `alert`/`confirm`/`prompt` and downloads are not
+  granted either.
+- **Lets you trust individual files.** The shield button (or a command) asks for confirmation,
+  then shows that file exactly like the original plugin's non-strict mode. Trust is bound to the
+  SHA-256 of the content you approved: if the file changes, it is isolated again until you trust
+  it again. Trust follows renames and moves.
+- **Has no global switch** to turn isolation off. The upstream `Strict isolation` setting is
+  gone; old settings load without granting anything.
+- **Always shows what is going on.** An «Isolated» line above every page explains what is blocked;
+  notices list neighbouring files and internet resources that will not load; trusted files carry a
+  permanent «Not isolated · trusted file» label. Nothing fails silently.
 
-No local web server is involved: the file is resolved through Obsidian's own resource
-URL (`app.vault.getResourcePath`), the same mechanism used to display images from your
-vault. This works on desktop and mobile alike.
+What isolated mode supports: single-file HTML, inline CSS and JavaScript, `data:`/`blob:` images,
+fonts and media, anchors, forms handled by scripts. What it does not: `localStorage`, files next to
+the page (CSS, images, other pages), anything from the internet, new windows, dialogs, downloads.
+Trusting the file brings all of that back.
+
+### Residual risks
+
+- **Self-navigation.** No CSP can stop a page from navigating its own frame to a website, so that
+  one request always leaves. When the page navigates after loading, the plugin notices and removes
+  the frame; a script that navigates *while* the page is loading cannot be told apart from the
+  page's own load. The static analysis warns when it finds navigation code.
+- **Check-then-load window.** A trusted file is hashed, then loaded from disk. A change in between
+  triggers Obsidian's `modify` event, which re-evaluates the file before repainting.
+- **Trusted means trusted.** A trusted file has the original plugin's privileges: network, storage,
+  windows, downloads and, on mobile, possibly access to your vault. The confirmation dialog says so.
+- **Synced trust.** The trusted list lives in the plugin's `data.json`, so it travels with the vault.
+- Anyone who can write to `.obsidian/` can replace any plugin; that is out of scope.
+
+## Installation
+
+This fork is not published in the community directory. Copy `main.js`, `manifest.json` and
+`styles.css` into `<vault>/.obsidian/plugins/html-prototype-viewer-strict/` (Settings → Community
+plugins → folder icon opens that `plugins` folder), reload the list and enable
+**HTML Prototype Viewer (Strict)**. Disable the original **HTML Prototype Viewer**: only one view
+can own the `.html` extension. Requires Obsidian 1.13 or newer.
 
 ## Features
 
@@ -26,11 +61,12 @@ vault. This works on desktop and mobile alike.
   opens in a tab.
 - **Device widths.** Switch the render width between full width, desktop (1280 px),
   tablet (834 px) and mobile (390 px) from the tab toolbar.
-- **Live reload.** The preview refreshes whenever the file changes on disk — handy when
-  iterating on a prototype you edit elsewhere.
-- **Embed previews in notes** with an `html-preview` code block.
+- **Live reload.** The preview refreshes whenever the file changes on disk. A trusted file is
+  always re-evaluated when it changes, even with live reload off.
+- **Embed previews in notes** with an `html-preview` code block, with the same isolation, notices
+  and labels.
 - **Open in the system browser** from the tab toolbar or the file context menu.
-- English and French interface, following Obsidian's language setting.
+- English, French and Spanish interface, following Obsidian's language setting.
 
 ## Embedding in a note
 
@@ -58,43 +94,41 @@ The command **Insert a prototype preview in the note** generates the skeleton.
 | Default render width | Width applied when opening an HTML file |
 | Reload automatically | Refresh the preview when the file changes on disk |
 | Preview height in notes | Default height for `html-preview` blocks |
-| Strict isolation | Drops `allow-same-origin` from the iframe sandbox |
-
-### About strict isolation
-
-By default the iframe keeps its origin, so prototypes can use `localStorage` and load
-neighbouring files (images, fonts, sibling pages). This also means a prototype's scripts
-run with the same origin as the app.
-
-Enable **Strict isolation** for HTML you did not write yourself: the prototype then runs
-in an opaque origin and cannot reach the Obsidian API — at the cost of `localStorage` and
-relative file loading.
+| Trusted files | Every trusted file, with its date, fingerprint and status (unchanged, changed, not found); revoke one or all |
 
 ## Compatibility note
 
 Only one view can own the `.html` extension. If another HTML-rendering plugin (such as
-HTML Reader) is enabled at the same time, which one wins depends on plugin load order.
-Disable the other one for predictable behaviour.
+HTML Reader or the original HTML Prototype Viewer) is enabled at the same time, which one wins
+depends on plugin load order. Disable the other one for predictable behaviour.
 
 ## Development
 
 ```bash
-npm install
-npm run dev     # watch build
-npm run build   # type-check, then production bundle
+npm ci --ignore-scripts   # dependency install scripts never run
+npm run dev               # watch build
+npm run build             # type-check, then production bundle
+npm test                  # type-check, then unit tests (node:test)
 ```
 
-To deploy the build into a vault for testing, point the repo at it — either with the
-`OBSIDIAN_VAULT` environment variable, or by writing the vault's absolute path into a
-git-ignored `.vault-path` file at the repo root — then:
+Desktop checks in a real Obsidian, on a throwaway vault and an isolated profile (Linux, needs
+`Xvfb` and the `obsidian` binary; DevTools on 127.0.0.1 only):
 
 ```bash
-npm run build && npm run install-local
+npm run build
+node scripts/make-test-vault.mjs /tmp/hpv-vault
+node test/obsidian/launch.mjs start /tmp/hpv-profile /tmp/hpv-vault 9333
+node test/obsidian/checks.mjs 9333 /tmp/hpv-report
+node test/obsidian/launch.mjs stop /tmp/hpv-profile
 ```
 
-This copies `main.js`, `manifest.json` and `styles.css` into
-`<vault>/.obsidian/plugins/html-prototype-viewer/`. Reload Obsidian afterwards.
+`scripts/make-test-vault.mjs` builds a vault with the plugin enabled and the self-checking pages
+from `test/fixtures/vault` (each one reports green, amber or red), which is also what a person
+can open by hand to check a build.
+
+`npm run install-local` copies the build into the vault named by `OBSIDIAN_VAULT` or a git-ignored
+`.vault-path` file, under `<vault>/.obsidian/plugins/html-prototype-viewer-strict/`.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE). Original work © Renan Gautier; strict fork © fastup-one.
