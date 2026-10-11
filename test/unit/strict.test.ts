@@ -7,6 +7,7 @@ import {
 	classifyUrl,
 	cssUrls,
 	prepareSrcdoc,
+	reviewHtml,
 	sandboxFlags,
 	scanScript,
 	srcsetUrls,
@@ -209,4 +210,37 @@ test("scanScript: negatives", () => {
 	assert.deepEqual(scanScript("if (location.href == x) {} const l = location.hash"), quiet);
 	assert.deepEqual(scanScript("if (a.download === b) {}"), quiet);
 	assert.deepEqual(scanScript(""), quiet);
+});
+
+test("reviewHtml: a plain page is clean", () => {
+	const r = reviewHtml(`<!doctype html><style>.top .menu { top: 0 } .parent .child {}</style><p>Hello</p><a href="#top">top</a>`);
+	assert.deepEqual(r, { hostAccess: false, obsidianApi: false, dynamicCode: false, obfuscation: false, storage: false, remoteHosts: [] });
+});
+
+test("reviewHtml: flags each behaviour", () => {
+	assert.equal(reviewHtml("<script>parent.document.body</script>").hostAccess, true);
+	assert.equal(reviewHtml("<script>window.top.location = x</script>").hostAccess, true);
+	assert.equal(reviewHtml("<script>var f = frameElement;</script>").hostAccess, true);
+	assert.equal(reviewHtml("<script>opener.postMessage(1, '*')</script>").hostAccess, true);
+	assert.equal(reviewHtml("<script>app.vault.getFiles()</script>").obsidianApi, true);
+	assert.equal(reviewHtml("<script>const fs = require('fs')</script>").obsidianApi, true);
+	assert.equal(reviewHtml("<script>eval(code)</script>").dynamicCode, true);
+	assert.equal(reviewHtml("<script>new Function('return 1')</script>").dynamicCode, true);
+	assert.equal(reviewHtml("<script>setTimeout('run()', 10)</script>").dynamicCode, true);
+	assert.equal(reviewHtml("<script>atob(x)</script>").obfuscation, true);
+	assert.equal(reviewHtml("<script>var s = '" + "QUJD".repeat(600) + "';</script>").obfuscation, true);
+	assert.equal(reviewHtml("<script>String.fromCharCode(" + Array(30).fill("65").join(",") + ")</script>").obfuscation, true);
+	assert.equal(reviewHtml("<script>localStorage.setItem('k', 1)</script>").storage, true);
+	assert.equal(reviewHtml("<script>indexedDB.open('db')</script>").storage, true);
+});
+
+test("reviewHtml: remote hosts, deduplicated and sorted", () => {
+	const r = reviewHtml(`<link href="https://Fonts.GoogleAPIs.com/css?x"><script src="//cdn.example.org/a.js"></script>
+		<script>fetch("https://api.example.org:8443/v1"); fetch("https://fonts.googleapis.com/b")</script>
+		<a href="http://localhost/x">no dot, not a host</a> // a comment.with.dots`);
+	assert.deepEqual(r.remoteHosts, ["api.example.org", "cdn.example.org", "fonts.googleapis.com"]);
+});
+
+test("reviewHtml: setTimeout with a function is not dynamic code", () => {
+	assert.equal(reviewHtml("<script>setTimeout(function () {}, 10); setTimeout(() => go(), 5)</script>").dynamicCode, false);
 });

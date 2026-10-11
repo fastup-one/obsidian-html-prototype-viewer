@@ -224,3 +224,52 @@ export function analyzeDocument(doc: Document): IsolatedAnalysis {
 
 	return { relative: [...relative], remote: [...remote], ...result };
 }
+
+// --- Review shown in the trust dialog -----------------------------------------
+
+export interface HtmlReview {
+	/** Reaches the surrounding window (parent, top, opener, frameElement): on mobile, the whole vault once trusted. */
+	hostAccess: boolean;
+	/** Calls Obsidian's own API or a module loader. */
+	obsidianApi: boolean;
+	/** Builds and runs code at runtime. */
+	dynamicCode: boolean;
+	/** Encoded or obfuscated content. */
+	obfuscation: boolean;
+	/** Stores data in the browser. */
+	storage: boolean;
+	/** Hosts the page refers to (any http(s) or protocol-relative URL), sorted. */
+	remoteHosts: string[];
+}
+
+/**
+ * Quick static review of an HTML file's text, to help decide whether to trust
+ * it. Heuristic: hidden or generated code is not detected, so a clean review is
+ * not a guarantee. No lookbehind (old WebKit).
+ */
+export function reviewHtml(html: string): HtmlReview {
+	const hosts = new Set<string>();
+	for (const m of html.matchAll(/(?:https?:)?\/\/([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+)(?::\d+)?/gi)) {
+		hosts.add(m[1].toLowerCase());
+	}
+	return {
+		hostAccess:
+			/\b(?:parent|top|opener)\s*\.\s*(?:document|app|location|post[M]essage|frames|window|require|localStorage|frameElement)\b/.test(html) ||
+			/\bframeElement\b/.test(html) ||
+			/\bwindow\s*\.\s*(?:parent|top|opener)\b/.test(html),
+		obsidianApi:
+			/\bapp\s*\.\s*(?:vault|workspace|plugins|metadataCache|fileManager|commands|setting)\b/.test(html) ||
+			/\brequire\s*\(/.test(html),
+		dynamicCode:
+			/\beval\s*\(/.test(html) ||
+			/\bnew\s+Function\b/.test(html) ||
+			/\b(?:setTimeout|setInterval)\s*\(\s*["'`]/.test(html),
+		obfuscation:
+			/\batob\s*\(/.test(html) ||
+			/\bunescape\s*\(/.test(html) ||
+			/String\s*\.\s*fromCharCode\s*\((?:\s*\d+\s*,){20}/.test(html) ||
+			/[A-Za-z0-9+/]{2000,}={0,2}/.test(html),
+		storage: /\b(?:localStorage|sessionStorage|indexedDB)\b/.test(html),
+		remoteHosts: [...hosts].sort(),
+	};
+}

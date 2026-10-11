@@ -54,7 +54,7 @@ const EN = {
 	"trust.warning.scripts": "its scripts run with the same permissions as in the original plugin;",
 	"trust.warning.network": "it can connect to the internet, open windows and download files;",
 	"trust.warning.storage": "it can store data (localStorage) and load neighbouring files;",
-	"trust.warning.mobile": "on mobile, it could access your vault;",
+	"trust.warning.mobile": "it also becomes approved for your phone, where — if you confirm there too — it gets full access to your vault;",
 	"trust.warning.changes": "if its content changes, it goes back to isolated until you trust it again.",
 	"trust.cancel": "Cancel",
 	"trust.confirm": "Trust",
@@ -62,6 +62,26 @@ const EN = {
 	"trust.done": "{0} is trusted and shown without isolation.",
 	"trust.revoked": "{0} is isolated again.",
 	"trust.error": "Could not trust {0}: {1}",
+	"action.trust.mobile": "Isolated · trust (needs your computer's approval)…",
+	"status.trusted.mobile": "Full vault access · trusted file",
+	"status.trusted.mobile.details":
+		"On this device a trusted file can read, change and delete your notes and use the internet. It stays trusted only while your computer's approval of this exact content stands.",
+	"notice.unapproved":
+		"Trusted on this device, but your computer has not approved this exact content (or withdrew its approval), so it is shown isolated.",
+	"trust.needsApproval":
+		"Trust this file on your computer first, with this exact content. Then you can trust it here.",
+	"trust.mobile.warning":
+		"On this device, a trusted file gets FULL access to your vault: it can read, change and delete your notes and send them over the internet.",
+	"trust.mobile.approvedOn": "Approved on your computer on {0}.",
+	"trust.mobile.ack": "I understand that this file will have full access to my vault on this device.",
+	"review.title": "What this file does (quick static check — not a guarantee)",
+	"review.hostAccess": "Tries to reach the window around it (Obsidian). On a phone, trusting it gives it full access to your vault.",
+	"review.obsidianApi": "Calls Obsidian's own API or loads modules.",
+	"review.dynamicCode": "Builds and runs code at runtime (eval, Function).",
+	"review.obfuscation": "Contains encoded or obfuscated content.",
+	"review.storage": "Stores data in the browser (localStorage, IndexedDB).",
+	"review.remote": "Refers to: {0}",
+	"review.none": "No access to Obsidian, network, storage or dynamic code found.",
 
 	"setting.viewport.name": "Default render width",
 	"setting.viewport.desc":
@@ -146,7 +166,7 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"trust.warning.scripts": "ses scripts s'exécutent avec les mêmes permissions que dans le plugin d'origine ;",
 	"trust.warning.network": "il peut se connecter à internet, ouvrir des fenêtres et télécharger des fichiers ;",
 	"trust.warning.storage": "il peut stocker des données (localStorage) et charger des fichiers voisins ;",
-	"trust.warning.mobile": "sur mobile, il pourrait accéder à ton coffre ;",
+	"trust.warning.mobile": "il devient aussi approuvé pour ton téléphone, où — si tu confirmes là-bas aussi — il obtient un accès complet à ton coffre ;",
 	"trust.warning.changes": "si son contenu change, il redevient isolé jusqu'à ce que tu lui refasses confiance.",
 	"trust.cancel": "Annuler",
 	"trust.confirm": "Faire confiance",
@@ -154,6 +174,26 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"trust.done": "{0} est de confiance et s'affiche sans isolation.",
 	"trust.revoked": "{0} est de nouveau isolé.",
 	"trust.error": "Impossible de faire confiance à {0} : {1}",
+	"action.trust.mobile": "Isolé · faire confiance (nécessite l'approbation de ton ordinateur)…",
+	"status.trusted.mobile": "Accès complet au coffre · fichier de confiance",
+	"status.trusted.mobile.details":
+		"Sur cet appareil, un fichier de confiance peut lire, modifier et supprimer tes notes et utiliser internet. Il ne reste de confiance que tant que ton ordinateur approuve ce contenu exact.",
+	"notice.unapproved":
+		"De confiance sur cet appareil, mais ton ordinateur n'a pas approuvé ce contenu exact (ou a retiré son approbation) : il est affiché isolé.",
+	"trust.needsApproval":
+		"Fais d'abord confiance à ce fichier sur ton ordinateur, avec ce contenu exact. Ensuite tu pourras lui faire confiance ici.",
+	"trust.mobile.warning":
+		"Sur cet appareil, un fichier de confiance obtient un accès COMPLET à ton coffre : il peut lire, modifier et supprimer tes notes et les envoyer sur internet.",
+	"trust.mobile.approvedOn": "Approuvé sur ton ordinateur le {0}.",
+	"trust.mobile.ack": "Je comprends que ce fichier aura un accès complet à mon coffre sur cet appareil.",
+	"review.title": "Ce que fait ce fichier (vérification statique rapide — pas une garantie)",
+	"review.hostAccess": "Essaie d'atteindre la fenêtre qui l'entoure (Obsidian). Sur un téléphone, lui faire confiance lui donne un accès complet à ton coffre.",
+	"review.obsidianApi": "Appelle l'API d'Obsidian ou charge des modules.",
+	"review.dynamicCode": "Construit et exécute du code à la volée (eval, Function).",
+	"review.obfuscation": "Contient du contenu encodé ou obscurci.",
+	"review.storage": "Stocke des données dans le navigateur (localStorage, IndexedDB).",
+	"review.remote": "Fait référence à : {0}",
+	"review.none": "Aucun accès à Obsidian, au réseau, au stockage ni de code dynamique trouvé.",
 
 	"setting.viewport.name": "Largeur d'affichage par défaut",
 	"setting.viewport.desc":
@@ -236,7 +276,7 @@ const ES: Partial<Record<TranslationKey, string>> = {
 	"trust.warning.scripts": "sus scripts se ejecutan con los mismos permisos que en el plugin original;",
 	"trust.warning.network": "puede conectarse a internet, abrir ventanas y descargar archivos;",
 	"trust.warning.storage": "puede guardar datos (localStorage) y cargar archivos vecinos;",
-	"trust.warning.mobile": "en el móvil, podría acceder a tu vault;",
+	"trust.warning.mobile": "también queda aprobado para tu móvil, donde — si lo confirmas también allí — obtiene acceso completo a tu vault;",
 	"trust.warning.changes": "si su contenido cambia, vuelve a aislado hasta que vuelvas a confiar en él.",
 	"trust.cancel": "Cancelar",
 	"trust.confirm": "Confiar",
@@ -244,6 +284,26 @@ const ES: Partial<Record<TranslationKey, string>> = {
 	"trust.done": "{0} es de confianza y se muestra sin aislamiento.",
 	"trust.revoked": "{0} vuelve a estar aislado.",
 	"trust.error": "No se pudo confiar en {0}: {1}",
+	"action.trust.mobile": "Aislado · confiar (requiere la aprobación de tu ordenador)…",
+	"status.trusted.mobile": "Acceso completo al vault · archivo de confianza",
+	"status.trusted.mobile.details":
+		"En este dispositivo un archivo de confianza puede leer, cambiar y borrar tus notas y usar internet. Solo sigue siendo de confianza mientras tu ordenador mantenga la aprobación de este contenido exacto.",
+	"notice.unapproved":
+		"De confianza en este dispositivo, pero tu ordenador no ha aprobado este contenido exacto (o retiró su aprobación), así que se muestra aislado.",
+	"trust.needsApproval":
+		"Primero confía en este archivo en tu ordenador, con este contenido exacto. Después podrás confiar en él aquí.",
+	"trust.mobile.warning":
+		"En este dispositivo, un archivo de confianza obtiene acceso COMPLETO a tu vault: puede leer, cambiar y borrar tus notas y enviarlas por internet.",
+	"trust.mobile.approvedOn": "Aprobado en tu ordenador el {0}.",
+	"trust.mobile.ack": "Entiendo que este archivo tendrá acceso completo a mi vault en este dispositivo.",
+	"review.title": "Qué hace este archivo (revisión estática rápida — no es una garantía)",
+	"review.hostAccess": "Intenta llegar a la ventana que lo rodea (Obsidian). En un móvil, confiar en él le da acceso completo a tu vault.",
+	"review.obsidianApi": "Llama a la API de Obsidian o carga módulos.",
+	"review.dynamicCode": "Construye y ejecuta código sobre la marcha (eval, Function).",
+	"review.obfuscation": "Contiene contenido codificado u ofuscado.",
+	"review.storage": "Guarda datos en el navegador (localStorage, IndexedDB).",
+	"review.remote": "Hace referencia a: {0}",
+	"review.none": "No se ha encontrado acceso a Obsidian, red, almacenamiento ni código dinámico.",
 
 	"setting.viewport.name": "Ancho de renderizado por defecto",
 	"setting.viewport.desc":

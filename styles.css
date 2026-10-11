@@ -205,3 +205,45 @@
 .hpv-trust-hash {
 	font-family: var(--font-monospace);
 }
+
+/* --- Mobile trust and the review in the trust dialog ------------------- */
+
+.hpv-badge.is-full-access {
+	color: var(--text-error);
+}
+
+.hpv-trust-danger {
+	color: var(--text-error);
+	font-weight: var(--font-semibold);
+}
+
+.hpv-review {
+	margin: var(--size-4-3) 0;
+	padding: var(--size-4-2) var(--size-4-3);
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	font-size: var(--font-ui-small);
+}
+
+.hpv-review-title {
+	margin: 0 0 var(--size-2-2);
+	color: var(--text-muted);
+}
+
+.hpv-review ul {
+	margin: 0;
+	padding-inline-start: var(--size-4-5);
+}
+
+.hpv-review li.is-danger {
+	color: var(--text-error);
+}
+
+.hpv-ack {
+	display: flex;
+	gap: var(--size-4-2);
+	align-items: flex-start;
+	margin: var(--size-4-3) 0;
+	font-weight: var(--font-semibold);
+}

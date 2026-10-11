@@ -3,6 +3,7 @@ import type HtmlPrototypeViewerPlugin from "./main";
 import { createFrame } from "./frame";
 import { t } from "./i18n";
 import { sha256Hex } from "./sha256";
+import { getApproval } from "./approvals";
 import { IsolatedAnalysis, analyzeDocument } from "./strict";
 import { TrustDecision, decideMode } from "./trust";
 
@@ -51,13 +52,20 @@ export async function renderFile(
 	}
 	if (!opts.isCurrent()) return null;
 
-	// Any failure while hashing or deciding falls back to isolation (invariant 4).
+	// Any failure while hashing or deciding falls back to isolation (invariants 4 and 10).
 	let decision: TrustDecision = "isolated";
 	try {
-		decision = decideMode(file.path, sha256Hex(html), plugin.settings.trusted);
+		const approvals = plugin.requiresApproval ? await plugin.readApprovals() : null;
+		decision = decideMode(
+			file.path,
+			sha256Hex(html),
+			plugin.settings.trusted,
+			approvals ? (hash) => getApproval(approvals, hash) !== undefined : undefined,
+		);
 	} catch {
 		decision = "isolated";
 	}
+	if (!opts.isCurrent()) return null;
 
 	target.statusEl.empty();
 	target.stageEl.empty();
@@ -68,7 +76,7 @@ export async function renderFile(
 			: createFrame(plugin.app, file, { mode: "isolated", html });
 
 	if (decision === "trusted") {
-		renderTrustedStatus(target.statusEl);
+		renderTrustedStatus(target.statusEl, plugin.requiresApproval);
 	} else {
 		renderIsolatedStatus(target.statusEl, decision, analyze(html));
 		watchNavigation(frame, target, opts.onReload);
@@ -112,8 +120,13 @@ function badge(parent: HTMLElement, icon: string, text: string, cls: string): HT
 	return el;
 }
 
-function renderTrustedStatus(statusEl: HTMLElement): void {
+function renderTrustedStatus(statusEl: HTMLElement, fullVaultAccess: boolean): void {
 	const details = statusEl.createEl("details", { cls: "hpv-details" });
+	if (fullVaultAccess) {
+		badge(details.createEl("summary"), "shield-alert", t("status.trusted.mobile"), "is-trusted is-full-access");
+		details.createDiv({ cls: "hpv-details-body", text: t("status.trusted.mobile.details") });
+		return;
+	}
 	badge(details.createEl("summary"), "shield-off", t("status.trusted"), "is-trusted");
 	details.createDiv({ cls: "hpv-details-body", text: t("status.trusted.details") });
 }
@@ -128,6 +141,9 @@ function renderIsolatedStatus(statusEl: HTMLElement, decision: TrustDecision, an
 
 	if (decision === "isolated-changed") {
 		statusEl.createDiv({ cls: "hpv-notice is-warning", text: t("notice.changed") });
+	}
+	if (decision === "isolated-unapproved") {
+		statusEl.createDiv({ cls: "hpv-notice is-warning", text: t("notice.unapproved") });
 	}
 	if (!analysis) return;
 

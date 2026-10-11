@@ -15,7 +15,7 @@ export interface TrustEntry {
 
 export type TrustStore = Record<string, TrustEntry>;
 
-export type TrustDecision = "isolated" | "trusted" | "isolated-changed";
+export type TrustDecision = "isolated" | "trusted" | "isolated-changed" | "isolated-unapproved";
 
 const HASH_RE = /^[0-9a-f]{64}$/;
 
@@ -37,10 +37,21 @@ export function getEntry(store: TrustStore, path: string): TrustEntry | undefine
 	return hasEntry(store, path) ? store[path] : undefined;
 }
 
-export function decideMode(path: string, currentHash: string, store: TrustStore): TrustDecision {
+/**
+ * `approved`, when given, is the mobile rule: the content must also be
+ * approved by the desktop app, or the file stays isolated.
+ */
+export function decideMode(
+	path: string,
+	currentHash: string,
+	store: TrustStore,
+	approved?: (hash: string) => boolean,
+): TrustDecision {
 	const entry = getEntry(store, path);
 	if (!entry) return "isolated";
-	return entry.sha256 === currentHash ? "trusted" : "isolated-changed";
+	if (entry.sha256 !== currentHash) return "isolated-changed";
+	if (approved && !approved(currentHash)) return "isolated-unapproved";
+	return "trusted";
 }
 
 export function trust(store: TrustStore, path: string, hash: string, now: Date = new Date()): TrustStore {

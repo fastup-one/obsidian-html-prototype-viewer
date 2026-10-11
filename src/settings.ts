@@ -15,7 +15,7 @@ const STATUS_KEY: Record<TrustStatus, TranslationKey> = {
 };
 
 /** In Obsidian's language (moment's locale), not the system's. */
-function formatDate(iso: string): string {
+export function formatDate(iso: string): string {
 	return new Date(iso).toLocaleString(moment.locale(), { dateStyle: "medium", timeStyle: "short" });
 }
 

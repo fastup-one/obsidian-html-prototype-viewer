@@ -125,7 +125,10 @@ export class HtmlPrototypeView extends FileView {
 		if (!el) return;
 		const trusted = this.decision === "trusted";
 		setIcon(el, trusted ? "shield-off" : "shield");
-		el.setAttribute("aria-label", t(trusted ? "action.revoke" : "action.trust"));
+		el.setAttribute(
+			"aria-label",
+			t(trusted ? "action.revoke" : this.plugin.requiresApproval ? "action.trust.mobile" : "action.trust"),
+		);
 		el.toggleClass("hpv-trust-action-trusted", trusted);
 	}
 
