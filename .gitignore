@@ -4,3 +4,4 @@ main.js
 .vault-path
 data.json
 .DS_Store
+test-dist/

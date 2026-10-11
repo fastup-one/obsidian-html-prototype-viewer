@@ -6,6 +6,7 @@
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"test": "tsc -noEmit -skipLibCheck && node esbuild.test.mjs && node --test test-dist/*.test.mjs",
 		"install-local": "node scripts/install-local.mjs"
 	},
 	"devDependencies": {
