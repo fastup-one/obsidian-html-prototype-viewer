@@ -1,7 +1,7 @@
 {
-	"name": "html-prototype-viewer",
-	"version": "1.0.1",
-	"description": "Preview local HTML files in an isolated iframe inside Obsidian.",
+	"name": "html-prototype-viewer-strict",
+	"version": "1.0.1-strict.1",
+	"description": "Hardened fork of HTML Prototype Viewer: HTML files open isolated and without network by default.",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -9,9 +9,9 @@
 		"install-local": "node scripts/install-local.mjs"
 	},
 	"devDependencies": {
-		"@types/node": "^22.13.0",
-		"esbuild": "^0.25.0",
-		"obsidian": "latest",
-		"typescript": "^5.8.0"
+		"@types/node": "22.20.1",
+		"esbuild": "0.25.12",
+		"obsidian": "1.13.1",
+		"typescript": "5.9.3"
 	}
 }
