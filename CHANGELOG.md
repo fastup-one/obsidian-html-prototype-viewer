@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.0.1-strict.2
+
+- On the mobile app, trust needs the desktop's approval of the exact same content: the desktop writes
+  `approvals.json` (SHA-256 of each trusted content) next to the plugin; the phone checks it on every render and every
+  30 seconds, so a revoked or changed file goes back to isolated.
+- Mobile trust dialog: full-vault-access warning, the desktop approval date and a required checkbox. Trusted files on
+  the phone are labelled «Full vault access · trusted file».
+- Trust dialogs show a static review of the file: access to the surrounding window or Obsidian's API, network hosts,
+  storage, dynamic or obfuscated code.
+- The desktop dialog states that trusting also approves the file for the phone.
+- Installation guide: phone section for Self-hosted LiveSync (Hidden File Sync limited to the plugin folder).
+- Test vault: `08-reaches-obsidian.html`; the Obsidian harness also simulates the phone rule.
+
 ## 1.0.1-strict.1
 
 First release of the strict fork, based on upstream 1.0.1 (`f9922b8`).

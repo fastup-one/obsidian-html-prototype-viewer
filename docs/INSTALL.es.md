@@ -34,27 +34,52 @@ Necesitas **Obsidian 1.13 o posterior** (Ajustes → Acerca de).
   vuelve a confiar.
 - La lista de archivos de confianza, y los botones para retirarlos, están en **Ajustes → HTML Prototype Viewer
   (Strict)**.
-- La confianza viaja con el vault: lo que confíes en el ordenador también será de confianza en el móvil.
+- Confiar en un archivo en el ordenador también lo aprueba para tu móvil (ver abajo); el móvil pregunta igualmente antes de confiar.
 
 ## 3. En el móvil
 
-El plugin llega al móvil con la sincronización de tu vault:
+El plugin llega al móvil con la sincronización de tu vault; el explorador de archivos del móvil no ve la carpeta oculta
+`.obsidian`, así que no hay nada que copiar a mano. Con **Self-hosted LiveSync**, usa su *Hidden File Sync* limitado a
+la carpeta de este plugin:
 
-- **Obsidian Sync:** en los ajustes de Sync, activa que se sincronicen los complementos comunitarios instalados y la
-  lista de complementos activos.
-- **Otra sincronización** (iCloud, Syncthing, Git…): la carpeta oculta `.obsidian` viaja con el vault; no hay que hacer
-  nada más.
+1. En los ajustes de LiveSync: **General Settings → Extra menus** → activa **Enable advanced features** (solo ese).
+2. **Selector → Hidden Files**: añade en **Target patterns**
+   ```
+   ^\.obsidian(?:$|/plugins(?:$|/html-prototype-viewer-strict(?:/|$)))
+   ```
+   y en **Ignore patterns**
+   ```
+   ^\.obsidian/plugins/html-prototype-viewer-strict/data\.json$
+   ```
+3. **Sync Settings → Hidden Files → Enable Hidden File Sync**: elige **Overwrite** en el ordenador y **Fetch** en el
+   móvil. Reinicia Obsidian cuando te lo pida.
+4. En el móvil: **Ajustes → Complementos comunitarios** → activa **HTML Prototype Viewer (Strict)** y desactiva el
+   original.
 
-Después, en el móvil: **Ajustes → Complementos comunitarios** → activa **HTML Prototype Viewer (Strict)** y desactiva
-el original.
+Solo viajan los archivos de este plugin; sus ajustes y la lista de confianza propia del móvil (`data.json`) se quedan
+en cada dispositivo.
 
-**La única comprobación que falta** (2 minutos):
+### La confianza en el móvil necesita tu ordenador
 
-1. Copia `isolation-check.html` a tu vault y ábrelo en el **móvil**. Debe salir **🟢 VERDE** (selector EN/ES arriba a
-   la derecha).
-2. Pulsa el escudo → **Confiar**. Dime si sale **🟠 ÁMBAR** o **🔴 ROJO**. Rojo significa que en el móvil un archivo
-   de confianza puede ver tu vault: no es un fallo, pero hay que saberlo para decidir en qué confías.
-3. Pulsa el escudo otra vez para retirar la confianza. Después puedes borrar el archivo.
+En el móvil, un archivo de confianza obtiene **acceso completo a tu vault**: puede leer, cambiar y borrar tus notas y
+enviarlas por internet. Por eso el móvil solo deja confiar en un archivo en el que **tu ordenador ya confió con
+exactamente el mismo contenido**. Las aprobaciones del ordenador viajan en `approvals.json`, dentro de la carpeta del
+plugin. En el móvil vuelves a confirmar, marcando una casilla, y el archivo lleva la etiqueta **Acceso completo al vault
+· archivo de confianza**. Si el archivo cambia, o retiras la confianza en el ordenador, el móvil vuelve a mostrarlo
+aislado (en 30 segundos).
+
+**Compruébalo** (2 minutos), con `isolation-check.html` en tu vault:
+
+1. En el móvil: sale **🟢 VERDE**. Pulsa el escudo: un aviso te dice que primero confíes en él en tu ordenador.
+2. En el ordenador: escudo → **Confiar**. Espera a la sincronización.
+3. En el móvil: escudo → marca la casilla → **Confiar**. Sale **🔴 ROJO** con la etiqueta roja: es lo esperado, eso es
+   el acceso completo.
+4. En el ordenador: escudo otra vez (retirar). En 30 segundos el móvil vuelve a **🟢 VERDE**.
+
+### Actualizar
+
+Sustituye los tres archivos de la carpeta del plugin en el ordenador por los de la versión nueva. La sincronización los
+lleva al móvil. Después reinicia Obsidian en los dos dispositivos.
 
 ## 4. Volver atrás
 
@@ -74,7 +99,8 @@ desde el repositorio con su workflow de release: `gh attestation verify <zip> --
   internet, no guarda datos, no abre ventanas, no muestra diálogos ni descarga archivos. Encima de la página se explica
   qué se ha bloqueado.
 - **De confianza** (solo los archivos que tú elijas, y solo mientras no cambien): se ve como en el plugin original.
-  Encima aparece **Sin aislamiento · archivo de confianza** en naranja.
+  Encima aparece **Sin aislamiento · archivo de confianza** en naranja en el ordenador; **Acceso completo al vault ·
+  archivo de confianza** en rojo en el móvil, donde además necesita la aprobación de tu ordenador.
 - **Riesgo que queda:** una página puede intentar irse a otra web; esa petición sale. El plugin la detiene y muestra un
   aviso, salvo si lo hace mientras la página aún se está cargando.
 - Lo que nunca debe pasar: una página en blanco sin explicación. Si la ves, avísame.

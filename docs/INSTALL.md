@@ -33,24 +33,49 @@ Requires **Obsidian 1.13 or newer** (Settings → About).
 - If that file changes (for example, you regenerate it), it goes back to isolated and tells you. Trust it again if
   you still want it that way.
 - The list of trusted files, and the buttons to revoke them, are in **Settings → HTML Prototype Viewer (Strict)**.
-- Trust travels with the vault: a file you trust on the computer is also trusted on the phone.
+- Trusting a file on the computer also approves it for your phone (see below); the phone still asks before trusting it.
 
 ## 3. On your phone
 
-The plugin reaches the phone through your vault's sync:
+The plugin reaches the phone through your vault's sync; the phone's file browser cannot see the hidden `.obsidian`
+folder, so there is nothing to copy by hand. With **Self-hosted LiveSync**, use its *Hidden File Sync* limited to this
+plugin's folder:
 
-- **Obsidian Sync:** in the Sync settings, turn on syncing of installed community plugins and of the active plugin list.
-- **Other sync** (iCloud, Syncthing, Git…): the hidden `.obsidian` folder travels with the vault; nothing else to do.
+1. In LiveSync's settings: **General Settings → Extra menus** → turn on **Enable advanced features** (only that one).
+2. **Selector → Hidden Files**: add to **Target patterns**
+   ```
+   ^\.obsidian(?:$|/plugins(?:$|/html-prototype-viewer-strict(?:/|$)))
+   ```
+   and to **Ignore patterns**
+   ```
+   ^\.obsidian/plugins/html-prototype-viewer-strict/data\.json$
+   ```
+3. **Sync Settings → Hidden Files → Enable Hidden File Sync**: choose **Overwrite** on the computer, **Fetch** on the
+   phone. Restart Obsidian when asked.
+4. On the phone: **Settings → Community plugins** → enable **HTML Prototype Viewer (Strict)** and disable the original.
 
-Then, on the phone: **Settings → Community plugins** → enable **HTML Prototype Viewer (Strict)** and disable the
-original.
+Only this plugin's files travel; its settings and the phone's own trust list (`data.json`) stay on each device.
 
-**The one remaining check** (2 minutes):
+### Trust on the phone needs your computer
 
-1. Copy `isolation-check.html` into your vault and open it on the **phone**. It must show **🟢 GREEN**.
-2. Click the shield → **Trust**. Tell me whether it shows **🟠 AMBER** or **🔴 RED**. Red means that on the phone a
-   trusted file can see your vault: not a bug, but worth knowing when you decide what to trust.
-3. Click the shield again to revoke the trust. You can delete the file afterwards.
+On a phone, a trusted file gets **full access to your vault**: it can read, change and delete your notes and send them
+over the internet. So the phone only lets you trust a file that **your computer already trusted with exactly the same
+content**. The computer's approvals travel in `approvals.json`, inside the plugin folder. On the phone you then confirm
+again, ticking a checkbox, and the file is labelled **Full vault access · trusted file**. If the file changes, or you
+revoke it on the computer, the phone shows it isolated again (within 30 seconds).
+
+**Check it** (2 minutes), with `isolation-check.html` in your vault:
+
+1. On the phone: it shows **🟢 GREEN**. Click the shield: a message says to trust it on your computer first.
+2. On the computer: shield → **Trust**. Wait for the sync.
+3. On the phone: shield → tick the checkbox → **Trust**. It shows **🔴 RED** and the red label: expected, that is what
+   full access means.
+4. On the computer: shield again (revoke). Within 30 seconds the phone shows it **🟢 GREEN** again.
+
+### Updating
+
+Replace the three files in the computer's plugin folder with the new version's. The sync carries them to the phone.
+Then restart Obsidian on both devices.
 
 ## 4. Going back
 
@@ -69,7 +94,8 @@ repository by its release workflow: `gh attestation verify <zip> --repo <owner>/
 - **Isolated** (always, unless you trust the file): the page cannot touch Obsidian or your vault, has no internet,
   cannot store data, open windows, show dialogs or download files. A line above the page explains what was blocked.
 - **Trusted** (only files you choose, and only while they stay unchanged): shown as in the original plugin. Above it,
-  **Not isolated · trusted file** in orange.
+  **Not isolated · trusted file** in orange on the computer; **Full vault access · trusted file** in red on the phone,
+  where it also needs your computer's approval.
 - **Remaining risk:** a page can still try to send itself to a website; that one request leaves. The plugin stops the
   page and shows a notice — except when it happens while the page is still loading.
 - What must never happen: a blank page with no explanation. If you see one, report it.

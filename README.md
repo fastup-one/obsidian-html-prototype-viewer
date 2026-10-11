@@ -23,6 +23,13 @@ This fork:
   then shows that file exactly like the original plugin's non-strict mode. Trust is bound to the
   SHA-256 of the content you approved: if the file changes, it is isolated again until you trust
   it again. Trust follows renames and moves.
+- **Gates trust on phones behind the desktop.** On the mobile app a trusted file shares Obsidian's origin and reaches
+  the whole vault (verified on an iPhone). So a phone can only trust a file that the desktop app already trusted with
+  the same content: the desktop writes `approvals.json` (SHA-256 of each trusted content) next to the plugin, the
+  vault's sync carries it, and the phone checks it on every render and every 30 seconds. The phone still asks for its
+  own confirmation, with a required checkbox, and labels the file «Full vault access · trusted file».
+- **Reviews before trusting.** The trust dialog lists what the file does — reaching for the surrounding window or
+  Obsidian's API, network hosts, storage, dynamic or obfuscated code. A static check, not a guarantee.
 - **Has no global switch** to turn isolation off. The upstream `Strict isolation` setting is
   gone; old settings load without granting anything.
 - **Always shows what is going on.** An «Isolated» line above every page explains what is blocked;
@@ -43,8 +50,11 @@ Trusting the file brings all of that back.
 - **Check-then-load window.** A trusted file is hashed, then loaded from disk. A change in between
   triggers Obsidian's `modify` event, which re-evaluates the file before repainting.
 - **Trusted means trusted.** A trusted file has the original plugin's privileges: network, storage,
-  windows, downloads and, on mobile, possibly access to your vault. The confirmation dialog says so.
-- **Synced trust.** The trusted list lives in the plugin's `data.json`, so it travels with the vault.
+  windows, downloads and, on the mobile app, full access to your vault. The confirmation dialogs say so.
+- **Approvals file.** Anyone who can write to `.obsidian/` can forge `approvals.json` — like replacing the plugin
+  itself, that is out of scope. With two desktops, the last one to write it wins.
+- **Sync.** Sync only the plugin's own files to phones (`main.js`, `manifest.json`, `styles.css`, `approvals.json`);
+  keep `data.json` per device. See docs/INSTALL.md for Self-hosted LiveSync patterns.
 - Anyone who can write to `.obsidian/` can replace any plugin; that is out of scope.
 
 ## Installation
