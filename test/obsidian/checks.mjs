@@ -48,6 +48,7 @@ const UI = {
 		fullAccess: "Full vault access",
 		unapproved: "has not approved this exact content",
 		needsApproval: "Trust this file on your computer first",
+		withdrawn: "is isolated again: your computer withdrew its approval",
 		date: (text) => /[A-Z][a-z]{2} \d{1,2}, 2026/.test(text),
 	},
 	es: {
@@ -77,6 +78,7 @@ const UI = {
 		fullAccess: "Acceso completo al vault",
 		unapproved: "no ha aprobado este contenido exacto",
 		needsApproval: "Primero confía en este archivo en tu ordenador",
+		withdrawn: "vuelve a estar aislado: tu ordenador retiró su aprobación",
 		date: (text) => /\d{1,2} [a-z]{3} 2026/.test(text) && !/\b(AM|PM)\b/.test(text),
 	},
 }[lang];
@@ -414,13 +416,33 @@ await attempt("phone rule (simulated)", async () => {
 	check(`phone: trusted, labelled '${UI.fullAccess}'`, (await js("__hpv.frameInfo()")).sandbox === TRUSTED_FLAGS, await js("__hpv.status()"));
 	await shot("phone-trusted");
 
+	// The computer withdraws the approval; the sync writes the file. No reload: the periodic re-check must catch it.
+	const approvedBefore = await js("__hpv.approvals()");
+	await js(`(document.querySelectorAll(".notice").forEach((n) => n.remove()), true)`);
 	await js(`app.vault.adapter.write(".obsidian/plugins/${ID}/approvals.json", JSON.stringify({ version: 1, approvals: {} })).then(() => true)`);
-	await js(`__hpv.cmd("reload-prototype")`);
-	await waitFor(() => js(`__hpv.status().includes(${q(UI.unapproved)})`), { what: "unapproved notice" });
-	check("phone: approval withdrawn on the computer → isolated, with a notice", (await js("__hpv.frameInfo()")).sandbox === ISOLATED_FLAGS, await js("__hpv.status()"));
-	await shot("phone-unapproved");
+	await js(`${P}.recheckApprovals().then(() => true)`);
+	await waitFor(async () => (await js("__hpv.frameInfo()"))?.sandbox === ISOLATED_FLAGS, { what: "isolated after withdrawal", timeoutMs: 10000 });
+	check("phone: approval withdrawn on the computer → the re-check isolates the open file",
+		!(await js(`__hpv.status().includes(${q(UI.fullAccess)})`)), await js("__hpv.status()"));
+	check("phone: the withdrawal also cancels the phone's own confirmation, and says so",
+		Object.keys(await js(`${P}.settings.trusted`)).length === 0 && (await js("__hpv.notices()")).includes(UI.withdrawn), await js("__hpv.notices()"));
+	await shot("phone-withdrawn");
 
-	await js(`${P}.revokePath("07-trust.html").then(() => true)`);
+	// The computer approves the same content again: the phone must NOT go back to trusted by itself.
+	await js(`app.vault.adapter.write(".obsidian/plugins/${ID}/approvals.json", ${q(JSON.stringify({ version: 1, approvals: approvedBefore }))}).then(() => true)`);
+	await js(`${P}.recheckApprovals().then(() => true)`);
+	await sleep(1500);
+	check("phone: re-approved on the computer → still isolated until confirmed again on the phone",
+		Object.keys((await js("__hpv.approvals()")) ?? {}).length === 1 && (await js("__hpv.frameInfo()")).sandbox === ISOLATED_FLAGS && Object.keys(await js(`${P}.settings.trusted`)).length === 0,
+		{ approvals: await js("__hpv.approvals()"), status: await js("__hpv.status()") });
+	await js(`__hpv.cmd("trust-prototype")`);
+	await waitFor(() => js("__hpv.modal()"), { what: "phone trust dialog again" });
+	check("phone: trusting again asks for the checkbox again", await js("!!activeDocument.querySelector('.hpv-confirm-modal .hpv-ack input')"), null);
+	await js(`__hpv.clickModal(${q(UI.cancel)})`);
+	await waitFor(() => js("__hpv.modal() === null"), { what: "dialog closed" });
+
+	// Without any approval, the phone does not even open the dialog.
+	await js(`app.vault.adapter.write(".obsidian/plugins/${ID}/approvals.json", JSON.stringify({ version: 1, approvals: {} })).then(() => true)`);
 	await js(`(document.querySelectorAll(".notice").forEach((n) => n.remove()), true)`);
 	await js(`__hpv.cmd("trust-prototype")`);
 	await sleep(1000);

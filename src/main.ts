@@ -1,5 +1,14 @@
 import { EventRef, Events, Notice, Platform, Plugin, TAbstractFile, TFile, normalizePath } from "obsidian";
-import { APPROVALS_FILE, ApprovalStore, approvalsFromTrust, getApproval, parseApprovals, serializeApprovals } from "./approvals";
+import {
+	APPROVALS_FILE,
+	ApprovalStore,
+	approvalsFromTrust,
+	getApproval,
+	parseApprovals,
+	serializeApprovals,
+	withdrawnPaths,
+	withoutPaths,
+} from "./approvals";
 import { ConfirmModal } from "./confirm-modal";
 import { registerEmbed } from "./embed";
 import { canOpenExternally, openExternally } from "./frame";
@@ -29,6 +38,7 @@ export default class HtmlPrototypeViewerPlugin extends Plugin {
 		if (this.writesApprovals) await this.writeApprovals();
 		if (this.requiresApproval) {
 			this.lastApprovalsText = await this.readApprovalsText();
+			await this.syncWithApprovals();
 			// Approvals arrive through the vault's sync: re-check them, so a withdrawn
 			// approval isolates open trusted files again.
 			this.registerInterval(window.setInterval(() => void this.recheckApprovals(), 30_000));
@@ -175,6 +185,21 @@ export default class HtmlPrototypeViewerPlugin extends Plugin {
 		const text = await this.readApprovalsText();
 		if (text === this.lastApprovalsText) return;
 		this.lastApprovalsText = text;
+		await this.syncWithApprovals();
+		this.trustEvents.trigger("changed", null);
+	}
+
+	/**
+	 * Mobile: a withdrawn desktop approval also cancels this device's own
+	 * consent, so trusting again needs a new approval and a new confirmation.
+	 */
+	async syncWithApprovals(): Promise<void> {
+		if (!this.requiresApproval) return;
+		const withdrawn = withdrawnPaths(this.settings.trusted, await this.readApprovals());
+		if (withdrawn.length === 0) return;
+		this.settings.trusted = withoutPaths(this.settings.trusted, withdrawn);
+		await this.saveSettings();
+		for (const path of withdrawn) new Notice(t("trust.withdrawn", path.split("/").pop() ?? path), 10_000);
 		this.trustEvents.trigger("changed", null);
 	}
 

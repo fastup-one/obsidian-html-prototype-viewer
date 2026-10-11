@@ -35,7 +35,7 @@ Above every page there is a line with a shield and the word **Isolated**. That i
 12. **Phone only — trust needs your computer's approval:** on the phone, the shield refuses to trust a file until the
     computer has trusted that exact content. Once approved (and synced), the phone asks for its own confirmation with a
     checkbox, and the label reads **Full vault access · trusted file**. Revoke it on the computer: within 30 seconds the
-    phone shows it isolated again.
+    phone shows it isolated again and drops its own confirmation, so trusting it again needs both steps again.
 
 What must **never** happen: a blank page with no explanation.
 
@@ -64,6 +64,7 @@ Cada página tiene un selector **EN / ES** arriba a la derecha.
     llegar a la ventana que la rodea. Pulsa **Cancelar** — no confíes nunca en este archivo.
 12. **Solo en el móvil:** el escudo no deja confiar hasta que el ordenador haya confiado en ese contenido exacto. Con la
     aprobación (ya sincronizada), el móvil pide su propia confirmación con una casilla y la etiqueta dice **Acceso
-    completo al vault · archivo de confianza**. Retírala en el ordenador: en 30 segundos el móvil vuelve a aislado.
+    completo al vault · archivo de confianza**. Retírala en el ordenador: en 30 segundos el móvil vuelve a aislado y
+    anula su propia confirmación, así que volver a confiar exige otra vez los dos pasos.
 
 Lo que no debe pasar nunca: una página en blanco sin explicación.

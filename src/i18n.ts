@@ -32,7 +32,9 @@ const EN = {
 	"status.isolated.howto": "If you trust this file, use the shield button at the top to show it without isolation.",
 	"status.trusted": "Not isolated · trusted file",
 	"status.trusted.details":
-		"This file runs with the permissions of the original plugin: internet, storage, new windows and downloads and, on mobile, possibly access to your vault. If its content changes, it goes back to isolated automatically.",
+		"This file runs with the permissions of the original plugin: internet, storage, new windows and downloads. Trusting it here also approves it for your phone, where — once confirmed there — it gets full access to your vault. If its content changes, it goes back to isolated automatically.",
+	"trust.withdrawn":
+		"{0} is isolated again: your computer withdrew its approval. To trust it here again, trust it on your computer first, then confirm here.",
 
 	"notice.changed": "This file changed since you trusted it, so it is shown isolated.",
 	"notice.relative": "{0} neighbouring file(s) will not load in isolated mode",
@@ -144,7 +146,9 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"status.isolated.howto": "Si tu fais confiance à ce fichier, utilise le bouton bouclier en haut pour l'afficher sans isolation.",
 	"status.trusted": "Non isolé · fichier de confiance",
 	"status.trusted.details":
-		"Ce fichier s'exécute avec les permissions du plugin d'origine : internet, stockage, nouvelles fenêtres et téléchargements et, sur mobile, peut-être l'accès à ton coffre. Si son contenu change, il redevient isolé automatiquement.",
+		"Ce fichier s'exécute avec les permissions du plugin d'origine : internet, stockage, nouvelles fenêtres et téléchargements. Lui faire confiance ici l'approuve aussi pour ton téléphone, où — une fois confirmé là-bas — il obtient un accès complet à ton coffre. Si son contenu change, il redevient isolé automatiquement.",
+	"trust.withdrawn":
+		"{0} est de nouveau isolé : ton ordinateur a retiré son approbation. Pour lui refaire confiance ici, fais-lui d'abord confiance sur ton ordinateur, puis confirme ici.",
 
 	"notice.changed": "Ce fichier a changé depuis que tu lui as fait confiance : il est affiché isolé.",
 	"notice.relative": "{0} fichier(s) voisin(s) ne se chargeront pas en mode isolé",
@@ -254,7 +258,9 @@ const ES: Partial<Record<TranslationKey, string>> = {
 	"status.isolated.howto": "Si confías en este archivo, usa el botón del escudo de arriba para verlo sin aislamiento.",
 	"status.trusted": "Sin aislamiento · archivo de confianza",
 	"status.trusted.details":
-		"Este archivo se ejecuta con los permisos del plugin original: internet, almacenamiento, ventanas nuevas y descargas y, en móvil, posiblemente acceso a tu vault. Si su contenido cambia, vuelve a aislado automáticamente.",
+		"Este archivo se ejecuta con los permisos del plugin original: internet, almacenamiento, ventanas nuevas y descargas. Confiar en él aquí también lo aprueba para tu móvil, donde — una vez confirmado allí — obtiene acceso completo a tu vault. Si su contenido cambia, vuelve a aislado automáticamente.",
+	"trust.withdrawn":
+		"{0} vuelve a estar aislado: tu ordenador retiró su aprobación. Para volver a confiar en él aquí, primero confía en él en tu ordenador y luego confirma aquí.",
 
 	"notice.changed": "Este archivo cambió desde que confiaste en él, así que se muestra aislado.",
 	"notice.relative": "{0} archivo(s) vecino(s) no se cargarán en modo aislado",

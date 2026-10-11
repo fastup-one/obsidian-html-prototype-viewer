@@ -78,6 +78,8 @@ export async function renderFile(
 	if (decision === "trusted") {
 		renderTrustedStatus(target.statusEl, plugin.requiresApproval);
 	} else {
+		// Mobile: the desktop withdrew its approval; drop this device's consent as well.
+		if (decision === "isolated-unapproved") void plugin.syncWithApprovals();
 		renderIsolatedStatus(target.statusEl, decision, analyze(html));
 		watchNavigation(frame, target, opts.onReload);
 	}

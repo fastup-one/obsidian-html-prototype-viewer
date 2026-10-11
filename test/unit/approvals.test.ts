@@ -6,6 +6,8 @@ import {
 	getApproval,
 	parseApprovals,
 	serializeApprovals,
+	withdrawnPaths,
+	withoutPaths,
 } from "../../src/approvals";
 import { TrustStore, decideMode, emptyStore, trust } from "../../src/trust";
 
@@ -83,4 +85,18 @@ test("mobile rule: trusted only with a desktop approval of the current content",
 	assert.equal(decideMode("a.html", H2, local, approved(withApproval)), "isolated-changed");
 	// Desktop: no rule.
 	assert.equal(decideMode("a.html", H1, local), "trusted");
+});
+
+test("withdrawn approvals cancel the phone's own consent", () => {
+	const phone = store([["a.html", H1, T1], ["b.html", H2, T1]]);
+	const approvals = approvalsFromTrust(store([["a.html", H1, T1]]));
+	assert.deepEqual(withdrawnPaths(phone, approvals), ["b.html"]);
+	assert.deepEqual(withdrawnPaths(phone, emptyApprovals()), ["a.html", "b.html"]);
+	assert.deepEqual(withdrawnPaths(phone, approvalsFromTrust(phone)), []);
+	const pruned = withoutPaths(phone, ["b.html"]);
+	assert.deepEqual(Object.keys(pruned), ["a.html"]);
+	assert.equal(Object.getPrototypeOf(pruned), null);
+	assert.deepEqual(Object.keys(phone).sort(), ["a.html", "b.html"], "input untouched");
+	// Re-approving later does not bring the consent back: the entry is gone.
+	assert.equal(decideMode("b.html", H2, withoutPaths(phone, ["b.html"]), () => true), "isolated");
 });

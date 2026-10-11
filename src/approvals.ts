@@ -6,7 +6,7 @@
  * already trusted that exact content. The desktop writes this store (keyed by
  * SHA-256) next to the plugin; it reaches the phone through the vault's sync.
  */
-import { TrustStore } from "./trust";
+import { TrustStore, emptyStore } from "./trust";
 
 export interface Approval {
 	/** Vault path the desktop trusted this content at (informational). */
@@ -71,5 +71,23 @@ export function parseApprovals(text: string | null | undefined): ApprovalStore {
 		if (typeof approvedAt !== "string" || Number.isNaN(Date.parse(approvedAt))) continue;
 		out[hash] = { path, approvedAt };
 	}
+	return out;
+}
+
+/**
+ * Mobile: entries whose content the desktop no longer approves. A withdrawn
+ * approval cancels this device's own consent too, so trusting again needs a
+ * new desktop approval and a new confirmation here. Content that merely
+ * changed (hash mismatch) is left to the usual hash binding.
+ */
+export function withdrawnPaths(store: TrustStore, approvals: ApprovalStore): string[] {
+	return Object.keys(store)
+		.filter((path) => getApproval(approvals, store[path].sha256) === undefined)
+		.sort();
+}
+
+export function withoutPaths(store: TrustStore, paths: readonly string[]): TrustStore {
+	const out = emptyStore();
+	for (const key of Object.keys(store)) if (!paths.includes(key)) out[key] = store[key];
 	return out;
 }
