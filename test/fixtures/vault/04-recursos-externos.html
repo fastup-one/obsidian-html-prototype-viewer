@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Recursos externos</title>
+<script>window.__violations = []; document.addEventListener("securitypolicyviolation", function (e) { window.__violations.push(e.effectiveDirective); });</script>
+<!-- Every remote URL targets example.invalid, a reserved name that never resolves. -->
+<link rel="stylesheet" href="https://example.invalid/estilos-remotos.css">
+<link rel="stylesheet" href="estilos-vecinos.css">
+<script src="https://example.invalid/script-remoto.js"></script>
+<style>
+	body { font: 16px system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	#banner { font-size: 22px; font-weight: 700; padding: 16px 18px; border-radius: 10px; color: #fff; background: #777; }
+	.green { background: #0a7d32 !important; }
+	.red { background: #b00020 !important; }
+	img { width: 1px; height: 1px; }
+</style>
+</head>
+<body>
+<div id="banner">Comprobando…</div>
+<p>Esta página intenta cargar 3 cosas de internet y 2 archivos vecinos. En modo aislado nada de eso debe cargarse,
+y <strong>encima de la página</strong> debe aparecer un aviso con «3 recursos de internet bloqueados» y
+«2 archivos vecinos no se cargarán».</p>
+<img src="https://example.invalid/foto.png" alt="">
+<img src="imagen-vecina.png" alt="">
+<script>
+	(function () {
+		setTimeout(function () {
+			var banner = document.getElementById("banner");
+			if (window.REMOTE_SCRIPT_RAN) {
+				banner.textContent = "🔴 ROJO: se ejecutó un script de internet";
+				banner.className = "red";
+			} else if (self.origin === "null" && window.__violations.length >= 3) {
+				banner.textContent = "🟢 VERDE: nada de internet se ha cargado (" + window.__violations.length + " bloqueos)";
+				banner.className = "green";
+			} else if (self.origin !== "null") {
+				banner.textContent = "Sin aislamiento: este archivo es de confianza";
+			} else {
+				banner.textContent = "🔴 ROJO: no se detectaron los bloqueos esperados";
+				banner.className = "red";
+			}
+			document.title = banner.textContent;
+		}, 800);
+	})();
+</script>
+</body>
+</html>

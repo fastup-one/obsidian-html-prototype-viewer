@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Salir de la página</title>
+<style>
+	body { font: 16px system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	button, a { font-size: 17px; }
+</style>
+</head>
+<body>
+<h1>Salir de la página</h1>
+<p>Pulsa el botón o el enlace. La página intentará irse a otra web (una dirección que no existe).</p>
+<p>Lo correcto: <strong>esta página desaparece</strong> y en su lugar sale el aviso «La página intentó salir de su
+propio documento y se ha detenido», con un botón para volver a cargarla.</p>
+<p><button id="go">Intentar salir</button></p>
+<p><a href="https://example.invalid/otra-web">Enlace a otra web</a></p>
+<script>
+	document.getElementById("go").addEventListener("click", function () {
+		location.href = "https://example.invalid/otra-web";
+	});
+</script>
+</body>
+</html>
