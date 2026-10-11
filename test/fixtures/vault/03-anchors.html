@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Anchor check</title>
+<style>
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+	body { font: 17px system-ui, sans-serif; margin: 0; padding: 24px; background: #fafafa; color: #111; }
+	.langsw { display: flex; justify-content: flex-end; gap: 4px; }
+	.langsw button { font: 600 12px system-ui, sans-serif; padding: 3px 9px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: #333; cursor: pointer; }
+	.langsw button[aria-pressed="true"] { background: #333; border-color: #333; color: #fff; }
+	section { min-height: 900px; border-top: 1px solid #ccc; padding-top: 12px; }
+	#done { color: #0a7d32; font-size: 26px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+<h1><span class="en">Anchor check</span><span class="es">Prueba de anclas</span></h1>
+<p class="en">Click the link. It must <strong>scroll down within this same page</strong> to «✅ END». If the page turns blank, something is wrong.</p>
+<p class="es">Pulsa el enlace. Debe <strong>bajar dentro de esta misma página</strong> hasta «✅ FIN». Si la página se queda en blanco, algo falla.</p>
+<p><a href="#end"><span class="en">Go to the end ↓</span><span class="es">Ir al final ↓</span></a></p>
+<section><h2><span class="en">Section 1</span><span class="es">Sección 1</span></h2></section>
+<section><h2><span class="en">Section 2</span><span class="es">Sección 2</span></h2></section>
+<section id="end">
+	<p id="done"><span class="en">✅ END: the anchor works</span><span class="es">✅ FIN: el ancla funciona</span></p>
+	<p><a href="#"><span class="en">Back to the top ↑</span><span class="es">Volver arriba ↑</span></a></p>
+</section>
+<script>
+	document.querySelectorAll(".langsw button").forEach(function (b) {
+		b.addEventListener("click", function () {
+			var lang = b.getAttribute("data-l") === "es" ? "es" : "en";
+			document.documentElement.setAttribute("data-lang", lang);
+			document.documentElement.lang = lang;
+			document.querySelectorAll(".langsw button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+		});
+	});
+</script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Forms</title>
+<style>
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+	body { font: 16px system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	.langsw { display: flex; justify-content: flex-end; gap: 4px; }
+	.langsw button { font: 600 12px system-ui, sans-serif; padding: 3px 9px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: #333; cursor: pointer; }
+	.langsw button[aria-pressed="true"] { background: #333; border-color: #333; color: #fff; }
+	form { margin: 16px 0; padding: 14px; background: #fff; border: 1px solid #ccc; border-radius: 8px; }
+	.result { margin-top: 8px; font-weight: 700; color: #0a7d32; }
+</style>
+</head>
+<body>
+<div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+<h1><span class="en">Forms</span><span class="es">Formularios</span></h1>
+
+<form id="local">
+	<p class="en">1. A form handled inside the page (it must <strong>work</strong>):</p>
+	<p class="es">1. Formulario que se gestiona dentro de la página (debe <strong>funcionar</strong>):</p>
+	<input id="name" value="Test"> <button><span class="en">Send</span><span class="es">Enviar</span></button>
+	<div class="result" id="localResult"></div>
+</form>
+
+<form id="remote" action="https://example.invalid/send" method="post">
+	<p class="en">2. A form that tries to send data to the internet (it must be <strong>blocked</strong>):</p>
+	<p class="es">2. Formulario que intenta enviar datos a internet (debe quedar <strong>bloqueado</strong>):</p>
+	<input name="secret" value="data"> <button><span class="en">Send out</span><span class="es">Enviar fuera</span></button>
+	<div class="result" id="remoteResult"></div>
+</form>
+
+<script>
+	var lang = "en";
+	var state = { local: null, remote: false };
+	function T(en, es) { return lang === "es" ? es : en; }
+	function render() {
+		if (state.local !== null) {
+			document.getElementById("localResult").textContent = T("🟢 Works: received «", "🟢 Funciona: recibido «") + state.local + "»";
+		}
+		if (state.remote) {
+			document.getElementById("remoteResult").textContent = T("🟢 Blocked: nothing left the page", "🟢 Bloqueado: no ha salido nada");
+		}
+	}
+	document.getElementById("local").addEventListener("submit", function (e) {
+		e.preventDefault();
+		state.local = document.getElementById("name").value;
+		render();
+	});
+	document.addEventListener("securitypolicyviolation", function (e) {
+		if (e.effectiveDirective !== "form-action") return;
+		state.remote = true;
+		render();
+	});
+	document.querySelectorAll(".langsw button").forEach(function (b) {
+		b.addEventListener("click", function () {
+			lang = b.getAttribute("data-l") === "es" ? "es" : "en";
+			document.documentElement.setAttribute("data-lang", lang);
+			document.documentElement.lang = lang;
+			document.querySelectorAll(".langsw button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+			render();
+		});
+	});
+</script>
+</body>
+</html>

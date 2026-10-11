@@ -1,11 +1,12 @@
 /**
  * Automated desktop checks of html-prototype-viewer-strict in a real, isolated
  * Obsidian (see launch.mjs), on a vault made by scripts/make-test-vault.mjs.
- * Follows the same steps as the vault's LEEME.md. Prints PASS/FAIL lines,
- * writes report.json and screenshots to <outDir>. Uses Obsidian's internal
- * APIs (app.plugins, app.setting…) — test tooling only, never plugin code.
+ * Follows the same steps as the vault's README.md, with Obsidian's interface in
+ * English (default) or Spanish. Prints PASS/FAIL lines, writes report.json and
+ * screenshots to <outDir>. Uses Obsidian's internal APIs (app.plugins,
+ * app.setting…) — test tooling only, never plugin code.
  *
- *   node test/obsidian/checks.mjs <port> <outDir>
+ *   node test/obsidian/checks.mjs <port> <outDir> [en|es]
  */
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -16,7 +17,58 @@ const ID = "html-prototype-viewer-strict";
 const ISOLATED_FLAGS = "allow-scripts allow-forms";
 const TRUSTED_FLAGS =
 	"allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-same-origin";
-const [port = "9333", outDir = "obsidian-check-output"] = process.argv.slice(2);
+const [port = "9333", outDir = "obsidian-check-output", lang = "en"] = process.argv.slice(2);
+
+/** The plugin's interface strings the checks rely on, per Obsidian language. */
+const UI = {
+	en: {
+		isolated: "Isolated",
+		trusted: "Not isolated",
+		remote3: "3 internet resource(s) blocked",
+		relative2: "2 neighbouring file(s)",
+		remoteAny: "internet resource(s) blocked",
+		popups: "new windows",
+		navigated: "tried to leave its own document",
+		reload: "Reload",
+		changed: "changed since you trusted it",
+		size: "Size",
+		fingerprint: "Fingerprint",
+		mobile: "on mobile, it could access your vault",
+		cancel: "Cancel",
+		trust: "Trust",
+		revokeAria: "revoke trust",
+		isolation: "Isolation",
+		trustedFiles: "Trusted files",
+		unchanged: "unchanged",
+		revokeAll: "Revoke all",
+		revokeAllTitle: "Revoke trust for every file?",
+		date: (text) => /[A-Z][a-z]{2} \d{1,2}, 2026/.test(text),
+	},
+	es: {
+		isolated: "Aislado",
+		trusted: "Sin aislamiento",
+		remote3: "3 recurso(s) de internet bloqueado(s)",
+		relative2: "2 archivo(s) vecino(s)",
+		remoteAny: "recurso(s) de internet",
+		popups: "ventanas nuevas",
+		navigated: "intentó salir",
+		reload: "Volver a cargar",
+		changed: "cambió desde que confiaste",
+		size: "Tamaño",
+		fingerprint: "Huella",
+		mobile: "en el móvil, podría acceder a tu vault",
+		cancel: "Cancelar",
+		trust: "Confiar",
+		revokeAria: "retirar la confianza",
+		isolation: "Aislamiento",
+		trustedFiles: "Archivos de confianza",
+		unchanged: "sin cambios",
+		revokeAll: "Retirar todos",
+		revokeAllTitle: "¿Retirar la confianza a todos",
+		date: (text) => /\d{1,2} [a-z]{3} 2026/.test(text) && !/\b(AM|PM)\b/.test(text),
+	},
+}[lang];
+if (!UI) throw new Error(`Unknown language "${lang}" (en | es)`);
 mkdirSync(outDir, { recursive: true });
 
 const results = [];
@@ -86,7 +138,7 @@ async function open(path) {
 }
 const frameTitle = () => inFrame("document.title");
 
-// --- Setup: Obsidian's own vault-trust prompt, Spanish UI ---------------------
+// --- Setup: Obsidian's own vault-trust prompt, interface language ---------------
 
 await ready();
 const clickedVaultTrust = await js(`(() => {
@@ -101,125 +153,125 @@ await sleep(1500);
 await js(`app.setting?.close?.(); window.focus(); true`);
 await waitFor(() => js("activeWindow === window"), { what: "main window active" });
 await pluginLoaded();
-if ((await js(`localStorage.getItem("language")`)) !== "es") {
+if (((await js(`localStorage.getItem("language")`)) ?? "en") !== lang) {
 	// Obsidian's own reload command; the language is kept in the test profile for later runs.
-	await js(`localStorage.setItem("language", "es"); app.commands.executeCommandById("app:reload"); true`).catch(() => {});
+	await js(`localStorage.setItem("language", ${JSON.stringify(lang)}); app.commands.executeCommandById("app:reload"); true`).catch(() => {});
 	await sleep(4000);
 	await ready();
 	await pluginLoaded();
 }
-check("Obsidian UI in Spanish", (await js("moment.locale()")) === "es", await js("moment.locale()"));
+check(`Obsidian UI language: ${lang}`, (await js("moment.locale()")).startsWith(lang), await js("moment.locale()"));
 check("plugin loaded with the strict id", await js(`app.plugins.manifests["${ID}"]?.version`), null);
 console.log(`      Obsidian: ${await js("document.title")} · ${await js("navigator.userAgent.match(/Electron\\/[\\d.]+/)?.[0]")}`);
 
 // --- 01: minimal HTML, isolated by default -------------------------------------
 
 await attempt("01 minimal HTML renders isolated", async () => {
-	await open("01-basico.html");
+	await open("01-basic.html");
 	const info = await js("__hpv.frameInfo()");
-	await waitFor(async () => (await inFrame("document.body.innerText")).includes("Se ve el HTML"), { what: "01 text" });
+	await waitFor(async () => (await inFrame("document.body.innerText")).includes("The HTML is shown"), { what: "01 text" });
 	check("01 isolated iframe: srcdoc, exactly 'allow-scripts allow-forms', no src", info.sandbox === ISOLATED_FLAGS && info.srcdoc && !info.src, info);
 	check("01 srcdoc starts with the no-network CSP", info.srcdoc.startsWith('<meta http-equiv="Content-Security-Policy" content="default-src \'none\';'), info.srcdoc.slice(0, 120));
-	check("01 status shows 'Aislado'", (await js("__hpv.status()")).includes("Aislado"), await js("__hpv.status()"));
+	check(`01 status shows '${UI.isolated}'`, (await js("__hpv.status()")).includes(UI.isolated), await js("__hpv.status()"));
 	check("01 origin is opaque", (await inFrame("self.origin")) === "null", await inFrame("self.origin"));
-	await shot("01-basico");
+	await shot("01-basic");
 });
 
 // --- 02: isolation self-check ---------------------------------------------------
 
 await attempt("02 isolation self-check is green", async () => {
-	await open("02-aislamiento.html");
-	const title = await waitFor(async () => { const t = await frameTitle(); return /VERDE|ROJO|ÁMBAR/.test(t) && t; }, { what: "02 verdict" });
-	check("02 self-check: 🟢 VERDE (everything blocked)", title.includes("VERDE"), { title, rows: await inFrame("document.getElementById('list').innerText") });
-	check("02 status lists blocked internet resource and features", /recurso\(s\) de internet/.test(await js("__hpv.status()")) && /ventanas nuevas/.test(await js("__hpv.status()")), await js("__hpv.status()"));
-	await shot("02-aislamiento");
+	await open("02-isolation.html");
+	const title = await waitFor(async () => { const t = await frameTitle(); return /GREEN|RED|AMBER/.test(t) && t; }, { what: "02 verdict" });
+	check("02 self-check: 🟢 GREEN (everything blocked)", title.includes("GREEN"), { title, rows: await inFrame("document.getElementById('list').innerText") });
+	check("02 status lists blocked internet resource and features", (await js("__hpv.status()")).includes(UI.remoteAny) && (await js("__hpv.status()")).includes(UI.popups), await js("__hpv.status()"));
+	await shot("02-isolation");
 });
 
 // --- 03: anchors stay inside the document --------------------------------------
 
 await attempt("03 anchors", async () => {
-	await open("03-anclas.html");
-	await inFrame(`document.querySelector('a[href="#final"]').click(); true`);
+	await open("03-anchors.html");
+	await inFrame(`document.querySelector('a[href="#end"]').click(); true`);
 	await sleep(500);
 	const state = await inFrame("({ href: location.href, scrolled: scrollY > 0 })");
-	check("03 anchor scrolls inside the page (about:srcdoc#final), frame kept", state.href === "about:srcdoc#final" && state.scrolled && (await js("!!__hpv.frame()")), state);
-	await shot("03-anclas");
+	check("03 anchor scrolls inside the page (about:srcdoc#end), frame kept", state.href === "about:srcdoc#end" && state.scrolled && (await js("!!__hpv.frame()")), state);
+	await shot("03-anchors");
 });
 
 // --- 04: remote and neighbouring resources --------------------------------------
 
 await attempt("04 external resources", async () => {
-	await open("04-recursos-externos.html");
-	const title = await waitFor(async () => { const t = await frameTitle(); return /VERDE|ROJO|aislamiento/.test(t) && t; }, { what: "04 verdict" });
-	check("04 self-check: 🟢 VERDE (nothing from the internet loaded)", title.includes("VERDE"), title);
+	await open("04-external-resources.html");
+	const title = await waitFor(async () => { const t = await frameTitle(); return /GREEN|RED|isolated/.test(t) && t; }, { what: "04 verdict" });
+	check("04 self-check: 🟢 GREEN (nothing from the internet loaded)", title.includes("GREEN"), title);
 	const status = await js("__hpv.status()");
-	check("04 notices: 3 internet resources blocked, 2 neighbouring files", status.includes("3 recurso(s) de internet bloqueado(s)") && status.includes("2 archivo(s) vecino(s)"), status);
-	await shot("04-recursos-externos");
+	check("04 notices: 3 internet resources blocked, 2 neighbouring files", status.includes(UI.remote3) && status.includes(UI.relative2), status);
+	await shot("04-external-resources");
 });
 
 // --- 05: forms --------------------------------------------------------------------
 
 await attempt("05 forms", async () => {
-	await open("05-formulario.html");
+	await open("05-forms.html");
 	await inFrame(`document.querySelector("#local button").click(); document.querySelector("#remote button").click(); true`);
 	await sleep(800);
 	const r = await inFrame(`({ local: document.getElementById("localResult").innerText, remote: document.getElementById("remoteResult").innerText })`);
-	check("05 form handled by the page works", r.local.includes("Funciona"), r);
-	check("05 form sending data to the internet is blocked", r.remote.includes("Bloqueado"), r);
+	check("05 form handled by the page works", r.local.includes("Works"), r);
+	check("05 form sending data to the internet is blocked", r.remote.includes("Blocked"), r);
 	check("05 frame still in place (no navigation)", await js("!!__hpv.frame()"), null);
-	await shot("05-formulario");
+	await shot("05-forms");
 });
 
 // --- 06: leaving the document is stopped -------------------------------------------
 
 await attempt("06 navigation is stopped", async () => {
-	await open("06-salir-de-la-pagina.html");
+	await open("06-leave-the-page.html");
 	await inFrame(`document.getElementById("go").click(); true`);
-	await waitFor(() => js("!__hpv.frame() && __hpv.stage().includes('intentó salir')"), { timeoutMs: 15000, what: "navigation notice" });
+	await waitFor(() => js(`!__hpv.frame() && __hpv.stage().includes(${JSON.stringify(UI.navigated)})`), { timeoutMs: 15000, what: "navigation notice" });
 	check("06 frame removed and notice shown", true, await js("__hpv.stage()"));
-	await shot("06-salir");
-	await js(`[...__hpv.el().querySelectorAll(".hpv-error button")].find((b) => b.innerText.includes("Volver a cargar")).click(); true`);
+	await shot("06-leave-the-page");
+	await js(`[...__hpv.el().querySelectorAll(".hpv-error button")].find((b) => b.innerText.includes(${JSON.stringify(UI.reload)})).click(); true`);
 	await waitFor(() => js("!!__hpv.frame()"), { what: "reloaded frame" });
-	check("06 'Volver a cargar' brings the page back", true, null);
+	check(`06 '${UI.reload}' brings the page back`, true, null);
 });
 
 // --- Embedded block in a note ------------------------------------------------------
 
 await attempt("embed in a note", async () => {
-	await js(`__hpv.open("Nota con vista previa.md")`);
+	await js(`__hpv.open("Note with preview.md")`);
 	await waitFor(() => js("!!__hpv.el().querySelector('.hpv-embed iframe.hpv-frame')"), { what: "embedded frame" });
 	const embedFrame = `__hpv.el().querySelector(".hpv-embed iframe.hpv-frame")`;
-	const title = await waitFor(async () => { const t = await cdp.frameEval(embedFrame, "document.title"); return /VERDE|ROJO|ÁMBAR/.test(t) && t; }, { what: "embed verdict" });
+	const title = await waitFor(async () => { const t = await cdp.frameEval(embedFrame, "document.title"); return /GREEN|RED|AMBER/.test(t) && t; }, { what: "embed verdict" });
 	const status = await js(`__hpv.el().querySelector(".hpv-embed .hpv-status").innerText`);
 	const sandbox = await js(`${embedFrame}.getAttribute("sandbox")`);
-	check("embed: isolated, 'Aislado' shown, self-check green", title.includes("VERDE") && status.includes("Aislado") && sandbox === ISOLATED_FLAGS, { title, status, sandbox });
+	check(`embed: isolated, '${UI.isolated}' shown, self-check green`, title.includes("GREEN") && status.includes(UI.isolated) && sandbox === ISOLATED_FLAGS, { title, status, sandbox });
 	await shot("embed");
 });
 
 // --- Trust flow ------------------------------------------------------------------------
 
 await attempt("trust flow", async () => {
-	await open("07-confianza.html");
-	check("07 isolated: cannot store anything", (await inFrame("document.body.innerText")).includes("no puede guardar nada"), null);
+	await open("07-trust.html");
+	check("07 isolated: cannot store anything", (await inFrame("document.body.innerText")).includes("cannot store anything"), null);
 
 	check("trust command available on an isolated file", await js(`__hpv.cmd("trust-prototype")`), null);
 	const modal = await waitFor(() => js("__hpv.modal()"), { what: "trust dialog" });
 	check("dialog shows path, size, fingerprint and the mobile warning",
-		modal.includes("07-confianza.html") && /Tamaño/.test(modal) && /Huella\s*\n?\s*[0-9a-f]{12}/.test(modal) && modal.includes("en el móvil, podría acceder a tu vault"), modal);
+		modal.includes("07-trust.html") && modal.includes(UI.size) && new RegExp(`${UI.fingerprint}\\s*\\n?\\s*[0-9a-f]{12}`).test(modal) && modal.includes(UI.mobile), modal);
 	await shot("trust-dialog");
-	const focused = await waitFor(async () => { const t = await js("activeDocument.activeElement?.innerText?.trim()"); return t === "Cancelar" && t; }, { timeoutMs: 2000, what: "focus on Cancelar" }).catch(() => null);
-	check("Cancel has the focus", focused === "Cancelar", await js("activeDocument.activeElement?.outerHTML?.slice(0, 120)"));
+	const focused = await waitFor(async () => { const t = await js("activeDocument.activeElement?.innerText?.trim()"); return t === UI.cancel && t; }, { timeoutMs: 2000, what: "focus on Cancel" }).catch(() => null);
+	check("Cancel has the focus", focused === UI.cancel, await js("activeDocument.activeElement?.outerHTML?.slice(0, 120)"));
 	// A real key press: keyDown with text also produces the keypress that activates a focused button.
 	await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" });
 	await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
 	await waitFor(() => js("__hpv.modal() === null"), { what: "dialog closed" });
 	await sleep(300);
-	check("Enter cancels (focus on Cancelar): nothing trusted", Object.keys(await js("__hpv.trusted()")).length === 0 && (await js("__hpv.status()")).includes("Aislado"), await js("__hpv.trusted()"));
+	check("Enter cancels (focus on Cancel): nothing trusted", Object.keys(await js("__hpv.trusted()")).length === 0 && (await js("__hpv.status()")).includes(UI.isolated), await js("__hpv.trusted()"));
 
 	await js(`__hpv.cmd("trust-prototype")`);
 	await waitFor(() => js("__hpv.modal()"), { what: "trust dialog (focus test)" });
 	await sleep(200);
-	await js(`[...activeDocument.querySelectorAll(".hpv-confirm-modal button")].find((b) => b.innerText.trim() === "Confiar").focus(); activeDocument.querySelector(".hpv-confirm-modal").focus(); true`);
+	await js(`[...activeDocument.querySelectorAll(".hpv-confirm-modal button")].find((b) => b.innerText.trim() === ${JSON.stringify(UI.trust)}).focus(); activeDocument.querySelector(".hpv-confirm-modal").focus(); true`);
 	await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13, text: "\r" });
 	await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key: "Enter", code: "Enter", windowsVirtualKeyCode: 13 });
 	await waitFor(() => js("__hpv.modal() === null"), { what: "dialog closed (2)" });
@@ -228,68 +280,68 @@ await attempt("trust flow", async () => {
 
 	await js(`__hpv.cmd("trust-prototype")`);
 	await waitFor(() => js("__hpv.modal()"), { what: "trust dialog (2)" });
-	await js(`__hpv.clickModal("Confiar")`);
-	await waitFor(() => js("__hpv.status().includes('Sin aislamiento')"), { what: "trusted status" });
+	await js(`__hpv.clickModal(${JSON.stringify(UI.trust)})`);
+	await waitFor(() => js(`__hpv.status().includes(${JSON.stringify(UI.trusted)})`), { what: "trusted status" });
 	const info = await js("__hpv.frameInfo()");
 	check("trusted: upstream iframe (src, upstream flags + allow-same-origin, no srcdoc)", info.sandbox === TRUSTED_FLAGS && info.src && !info.srcdoc, info);
 	const trusted = await js("__hpv.trusted()");
-	check("trusted entry saved with the content hash", /^[0-9a-f]{64}$/.test(trusted["07-confianza.html"]?.sha256 ?? ""), trusted);
-	await waitFor(async () => (await inFrame("document.body.innerText")).includes("1 vez"), { what: "first visit" });
+	check("trusted entry saved with the content hash", /^[0-9a-f]{64}$/.test(trusted["07-trust.html"]?.sha256 ?? ""), trusted);
+	await waitFor(async () => (await inFrame("document.body.innerText")).includes("1 time"), { what: "first visit" });
 	await shot("trusted");
 	await js(`__hpv.cmd("reload-prototype")`);
-	await waitFor(async () => (await inFrame("document.body.innerText")).includes("2 vez"), { what: "second visit" });
+	await waitFor(async () => (await inFrame("document.body.innerText")).includes("2 time"), { what: "second visit" });
 	check("trusted: storage works (visit counter goes up after reload)", true, null);
 
-	const original = await js(`app.vault.read(__hpv.file("07-confianza.html"))`);
-	await js(`app.vault.modify(__hpv.file("07-confianza.html"), ${JSON.stringify(original + "\n<!-- changed -->\n")}).then(() => true)`);
-	await waitFor(() => js("__hpv.status().includes('cambió desde que confiaste')"), { what: "changed notice" });
+	const original = await js(`app.vault.read(__hpv.file("07-trust.html"))`);
+	await js(`app.vault.modify(__hpv.file("07-trust.html"), ${JSON.stringify(original + "\n<!-- changed -->\n")}).then(() => true)`);
+	await waitFor(() => js(`__hpv.status().includes(${JSON.stringify(UI.changed)})`), { what: "changed notice" });
 	check("content changed: back to isolated with a notice", (await js("__hpv.frameInfo()")).sandbox === ISOLATED_FLAGS, await js("__hpv.status()"));
 	await shot("changed");
 
-	await js(`app.vault.modify(__hpv.file("07-confianza.html"), ${JSON.stringify(original)}).then(() => true)`);
-	await waitFor(() => js("__hpv.status().includes('Sin aislamiento')"), { what: "trusted again" });
+	await js(`app.vault.modify(__hpv.file("07-trust.html"), ${JSON.stringify(original)}).then(() => true)`);
+	await waitFor(() => js(`__hpv.status().includes(${JSON.stringify(UI.trusted)})`), { what: "trusted again" });
 	check("original content restored: trusted again (trust is bound to the hash)", true, null);
 
-	await js(`app.vault.createFolder("carpeta").catch(() => {}).then(() => app.fileManager.renameFile(__hpv.file("07-confianza.html"), "carpeta/07-renombrado.html")).then(() => true)`);
-	await waitFor(async () => Object.keys(await js("__hpv.trusted()")).includes("carpeta/07-renombrado.html"), { what: "trust follows rename" });
+	await js(`app.vault.createFolder("folder").catch(() => {}).then(() => app.fileManager.renameFile(__hpv.file("07-trust.html"), "folder/07-renamed.html")).then(() => true)`);
+	await waitFor(async () => Object.keys(await js("__hpv.trusted()")).includes("folder/07-renamed.html"), { what: "trust follows rename" });
 	await sleep(500);
-	check("rename/move keeps the trust", (await js("__hpv.status()")).includes("Sin aislamiento") && !Object.keys(await js("__hpv.trusted()")).includes("07-confianza.html"), await js("__hpv.trusted()"));
+	check("rename/move keeps the trust", (await js("__hpv.status()")).includes(UI.trusted) && !Object.keys(await js("__hpv.trusted()")).includes("07-trust.html"), await js("__hpv.trusted()"));
 
-	await js(`[...__hpv.leaf.view.containerEl.querySelectorAll(".view-action")].find((a) => (a.getAttribute("aria-label") || "").includes("retirar la confianza")).click(); true`);
-	await waitFor(() => js("__hpv.status().includes('Aislado')"), { what: "revoked" });
+	await js(`[...__hpv.leaf.view.containerEl.querySelectorAll(".view-action")].find((a) => (a.getAttribute("aria-label") || "").includes(${JSON.stringify(UI.revokeAria)})).click(); true`);
+	await waitFor(() => js(`__hpv.status().includes(${JSON.stringify(UI.isolated)})`), { what: "revoked" });
 	check("shield button revokes at once, without a dialog", (await js("__hpv.modal()")) === null && Object.keys(await js("__hpv.trusted()")).length === 0, await js("__hpv.trusted()"));
-	await js(`app.fileManager.renameFile(__hpv.file("carpeta/07-renombrado.html"), "07-confianza.html").then(() => true)`);
+	await js(`app.fileManager.renameFile(__hpv.file("folder/07-renamed.html"), "07-trust.html").then(() => true)`);
 });
 
 // --- Trusted on desktop: amber, then settings and revoke all ---------------------------------
 
 await attempt("trusted self-check and settings", async () => {
-	await open("02-aislamiento.html");
+	await open("02-isolation.html");
 	await js(`__hpv.cmd("trust-prototype")`);
 	await waitFor(() => js("__hpv.modal()"), { what: "trust dialog (02)" });
-	await js(`__hpv.clickModal("Confiar")`);
-	const title = await waitFor(async () => { const t = await frameTitle(); return /ÁMBAR|ROJO/.test(t) && t; }, { what: "02 trusted verdict" });
-	check("02 trusted on desktop: 🟠 ÁMBAR (no access to Obsidian)", title.includes("ÁMBAR"), { title, rows: await inFrame("document.getElementById('list').innerText") });
+	await js(`__hpv.clickModal(${JSON.stringify(UI.trust)})`);
+	const title = await waitFor(async () => { const t = await frameTitle(); return /AMBER|RED/.test(t) && t; }, { what: "02 trusted verdict" });
+	check("02 trusted on desktop: 🟠 AMBER (no access to Obsidian)", title.includes("AMBER"), { title, rows: await inFrame("document.getElementById('list').innerText") });
 	await shot("02-trusted");
 
 	await js(`app.setting.open(); app.setting.openTabById("${ID}"); true`);
 	const win = await connect(Number(port), SETTINGS_WINDOW, { timeoutMs: 15000 });
-	const text = await waitFor(async () => { const t = await win.evaluate(`document.querySelector(".vertical-tab-content")?.innerText ?? ""`); return /sin cambios/.test(t) && t; }, { what: "settings statuses" });
-	check("settings: isolation explained, trusted list with status", text.includes("Aislamiento") && text.includes("Archivos de confianza") && text.includes("02-aislamiento.html") && text.includes("sin cambios"), text.slice(0, 600));
-	check("settings: trust date in Obsidian's language", /\d{1,2} oct 2026/.test(text) && !/\b(AM|PM)\b/.test(text), text.match(/Confiado el [^·]*/)?.[0]);
+	const text = await waitFor(async () => { const t = await win.evaluate(`document.querySelector(".vertical-tab-content")?.innerText ?? ""`); return t.includes(UI.unchanged) && t; }, { what: "settings statuses" });
+	check("settings: isolation explained, trusted list with status", text.includes(UI.isolation) && text.includes(UI.trustedFiles) && text.includes("02-isolation.html") && text.includes(UI.unchanged), text.slice(0, 600));
+	check("settings: trust date in Obsidian's language", UI.date(text), text.match(/02-isolation\.html\n[^\n]*/)?.[0]);
 	check("settings: no switch to disable isolation", !/Isolation stricte|Strict isolation|Aislamiento estricto/.test(text), null);
 	writeFileSync(join(outDir, "settings.png"), await win.screenshot());
-	await win.evaluate(`[...document.querySelectorAll(".vertical-tab-content .setting-item")].find((s) => s.querySelector(".setting-item-name")?.innerText.trim() === "Retirar todos").click(); true`);
+	await win.evaluate(`[...document.querySelectorAll(".vertical-tab-content .setting-item")].find((s) => s.querySelector(".setting-item-name")?.innerText.trim() === ${JSON.stringify(UI.revokeAll)}).click(); true`);
 	// The confirmation opens in the settings window, Obsidian's active window at that moment.
 	const dialog = await waitFor(() => win.evaluate(`document.querySelector(".hpv-confirm-modal")?.innerText ?? ""`), { what: "revoke-all dialog" });
-	check("'Retirar todos' asks for confirmation first", /¿Retirar la confianza a todos/.test(dialog), dialog);
-	await win.evaluate(`[...document.querySelectorAll(".hpv-confirm-modal button")].find((b) => b.innerText.trim() === "Retirar todos").click(); true`);
+	check(`'${UI.revokeAll}' asks for confirmation first`, dialog.includes(UI.revokeAllTitle), dialog);
+	await win.evaluate(`[...document.querySelectorAll(".hpv-confirm-modal button")].find((b) => b.innerText.trim() === ${JSON.stringify(UI.revokeAll)}).click(); true`);
 	win.close();
 	await waitFor(async () => Object.keys(await js("__hpv.trusted()")).length === 0, { what: "revoke all" });
-	check("'Retirar todos' (with confirmation) empties the list", true, null);
+	check(`'${UI.revokeAll}' (with confirmation) empties the list`, true, null);
 	await js(`app.setting.close(); true`);
-	await waitFor(async () => (await frameTitle()).includes("VERDE"), { what: "02 isolated again" });
-	check("02 isolated again after 'Retirar todos'", true, null);
+	await waitFor(async () => (await frameTitle()).includes("GREEN"), { what: "02 isolated again" });
+	check(`02 isolated again after '${UI.revokeAll}'`, true, null);
 });
 
 // --- Upstream settings never grant trust ----------------------------------------------------------
@@ -300,18 +352,18 @@ await attempt("upstream settings", async () => {
 	await pluginLoaded();
 	const settings = await js(`({ keys: Object.keys(app.plugins.plugins["${ID}"].settings), trusted: Object.keys(app.plugins.plugins["${ID}"].settings.trusted) })`);
 	check("data.json with strictIsolation:false loads with no global switch and no trust", !settings.keys.includes("strictIsolation") && settings.trusted.length === 0, settings);
-	await open("02-aislamiento.html");
-	await waitFor(async () => (await frameTitle()).includes("VERDE"), { what: "02 isolated" });
+	await open("02-isolation.html");
+	await waitFor(async () => (await frameTitle()).includes("GREEN"), { what: "02 isolated" });
 	check("…and files still open isolated", true, null);
 });
 
 // --- Fast switching never shows an older file -----------------------------------------------------
 
 await attempt("fast switching", async () => {
-	await js(`__hpv.open("01-basico.html"); __hpv.open("04-recursos-externos.html"); __hpv.open("03-anclas.html").then(() => true)`);
+	await js(`__hpv.open("01-basic.html"); __hpv.open("04-external-resources.html"); __hpv.open("03-anchors.html").then(() => true)`);
 	await sleep(2000);
 	// Obsidian decides which of the concurrent opens wins; the plugin must show exactly that file, once.
-	const expected = { "01-basico.html": "Se ve el HTML", "04-recursos-externos.html": "intenta cargar", "03-anclas.html": "Prueba de anclas" };
+	const expected = { "01-basic.html": "The HTML is shown", "04-external-resources.html": "tries to load", "03-anchors.html": "Anchor check" };
 	const state = await js(`({ file: __hpv.leaf.view.file?.path, title: __hpv.frame()?.getAttribute("title"), frames: __hpv.frames() })`);
 	const text = await inFrame("document.body.innerText");
 	check("fast switching: the frame shows the tab's current file, and only one frame",

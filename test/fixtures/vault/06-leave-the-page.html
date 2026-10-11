@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Leaving the page</title>
+<style>
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+	body { font: 16px system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	.langsw { display: flex; justify-content: flex-end; gap: 4px; }
+	.langsw button { font: 600 12px system-ui, sans-serif; padding: 3px 9px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: #333; cursor: pointer; }
+	.langsw button[aria-pressed="true"] { background: #333; border-color: #333; color: #fff; }
+	#go, a { font-size: 17px; }
+</style>
+</head>
+<body>
+<div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+<h1><span class="en">Leaving the page</span><span class="es">Salir de la página</span></h1>
+<p class="en">Click the button or the link. The page will try to go to another website (an address that does not exist).</p>
+<p class="es">Pulsa el botón o el enlace. La página intentará irse a otra web (una dirección que no existe).</p>
+<p class="en">Expected: <strong>this page disappears</strong> and a notice says «The page tried to leave its own document and
+was stopped», with a button to reload it.</p>
+<p class="es">Lo correcto: <strong>esta página desaparece</strong> y sale el aviso «La página intentó salir de su propio
+documento y se ha detenido», con un botón para volver a cargarla.</p>
+<p><button id="go" type="button"><span class="en">Try to leave</span><span class="es">Intentar salir</span></button></p>
+<p><a href="https://example.invalid/another-site"><span class="en">Link to another website</span><span class="es">Enlace a otra web</span></a></p>
+<script>
+	document.getElementById("go").addEventListener("click", function () {
+		location.href = "https://example.invalid/another-site";
+	});
+	document.querySelectorAll(".langsw button").forEach(function (b) {
+		b.addEventListener("click", function () {
+			var lang = b.getAttribute("data-l") === "es" ? "es" : "en";
+			document.documentElement.setAttribute("data-lang", lang);
+			document.documentElement.lang = lang;
+			document.querySelectorAll(".langsw button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+		});
+	});
+</script>
+</body>
+</html>
