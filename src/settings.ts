@@ -1,48 +1,23 @@
-import { App, PluginSettingTab, Setting, SettingDefinitionItem } from "obsidian";
+import { App, PluginSettingTab, SettingDefinitionItem, TFile, moment } from "obsidian";
 import type HtmlPrototypeViewerPlugin from "./main";
+import { ConfirmModal } from "./confirm-modal";
 import { TranslationKey, t } from "./i18n";
+import { DEFAULT_SETTINGS, VIEWPORTS } from "./settings-model";
+import { sha256Hex } from "./sha256";
+import { getEntry } from "./trust";
 
-export type ViewportId = "full" | "desktop" | "tablet" | "mobile";
+type TrustStatus = "valid" | "changed" | "missing";
 
-export interface Viewport {
-	id: ViewportId;
-	labelKey: TranslationKey;
-	/** Width forced onto the iframe, in px. `null` means the full panel width. */
-	width: number | null;
-}
-
-export const VIEWPORTS: Viewport[] = [
-	{ id: "full", labelKey: "viewport.full", width: null },
-	{ id: "desktop", labelKey: "viewport.desktop", width: 1280 },
-	{ id: "tablet", labelKey: "viewport.tablet", width: 834 },
-	{ id: "mobile", labelKey: "viewport.mobile", width: 390 },
-];
-
-export function viewportById(id: ViewportId): Viewport {
-	return VIEWPORTS.find((v) => v.id === id) ?? VIEWPORTS[0];
-}
-
-export interface HtmlPrototypeSettings {
-	/** Render width applied when a prototype is opened. */
-	viewport: ViewportId;
-	/** Reloads the iframe whenever the file changes on disk. */
-	autoReload: boolean;
-	/**
-	 * Drops `allow-same-origin` from the sandbox. The prototype then runs in an
-	 * opaque origin: no access to the Obsidian API, but also no localStorage and
-	 * no fetching of neighbouring files.
-	 */
-	strictIsolation: boolean;
-	/** Default height, in px, of `html-preview` blocks inside notes. */
-	embedHeight: number;
-}
-
-export const DEFAULT_SETTINGS: HtmlPrototypeSettings = {
-	viewport: "full",
-	autoReload: true,
-	strictIsolation: false,
-	embedHeight: 600,
+const STATUS_KEY: Record<TrustStatus, TranslationKey> = {
+	valid: "setting.trusted.status.valid",
+	changed: "setting.trusted.status.changed",
+	missing: "setting.trusted.status.missing",
 };
+
+/** In Obsidian's language (moment's locale), not the system's. */
+function formatDate(iso: string): string {
+	return new Date(iso).toLocaleString(moment.locale(), { dateStyle: "medium", timeStyle: "short" });
+}
 
 function viewportOptions(): Record<string, string> {
 	return Object.fromEntries(VIEWPORTS.map((vp) => [vp.id, t(vp.labelKey)]));
@@ -50,19 +25,25 @@ function viewportOptions(): Record<string, string> {
 
 export class HtmlPrototypeSettingTab extends PluginSettingTab {
 	private plugin: HtmlPrototypeViewerPlugin;
+	/** Status of each trusted file, keyed by path, approved hash and mtime, so stale results are recomputed. */
+	private statusCache = new Map<string, TrustStatus>();
+	private checking = false;
 
 	constructor(app: App, plugin: HtmlPrototypeViewerPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		plugin.registerEvent(plugin.onTrustChanged(() => this.update()));
 	}
 
 	/**
-	 * Declarative settings (Obsidian 1.13+). Beyond rendering, this is what makes
-	 * the settings reachable from the global settings search. `getControlValue` /
-	 * `setControlValue` default to reading and persisting `plugin.settings`, whose
-	 * keys match the `key` fields below.
+	 * Declarative settings (Obsidian 1.13+). `getControlValue` / `setControlValue`
+	 * default to reading and persisting `plugin.settings`, whose keys match the
+	 * `key` fields below. There is deliberately no setting that disables isolation.
 	 */
 	getSettingDefinitions(): SettingDefinitionItem[] {
+		const paths = Object.keys(this.plugin.settings.trusted).sort();
+		if (paths.some((path) => !this.statusCache.has(this.cacheKey(path)))) void this.checkStatuses(paths);
+
 		return [
 			{
 				name: t("setting.viewport.name"),
@@ -96,66 +77,87 @@ export class HtmlPrototypeSettingTab extends PluginSettingTab {
 				},
 			},
 			{
-				name: t("setting.strictIsolation.name"),
-				desc: t("setting.strictIsolation.desc"),
-				control: {
-					type: "toggle",
-					key: "strictIsolation",
-					defaultValue: DEFAULT_SETTINGS.strictIsolation,
+				name: t("setting.isolation.name"),
+				desc: t("setting.isolation.desc"),
+			},
+			{
+				type: "list",
+				heading: t("setting.trusted.heading"),
+				emptyState: t("setting.trusted.empty"),
+				items: paths.map((path) => ({ name: path, desc: this.describe(path) })),
+				// Revoking reduces privileges: no confirmation.
+				onDelete: (index: number) => {
+					const path = paths[index];
+					if (path !== undefined) void this.plugin.revokePath(path);
 				},
+			},
+			{
+				name: t("setting.trusted.revokeAll.name"),
+				desc: t("setting.trusted.revokeAll.desc"),
+				visible: () => Object.keys(this.plugin.settings.trusted).length > 0,
+				action: () => this.confirmRevokeAll(),
 			},
 		];
 	}
 
-	/** Fallback rendering for Obsidian versions older than 1.13. */
-	display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
+	private describe(path: string): string {
+		const entry = getEntry(this.plugin.settings.trusted, path);
+		if (!entry) return "";
+		const status = this.statusCache.get(this.cacheKey(path));
+		return t(
+			"setting.trusted.item",
+			formatDate(entry.trustedAt),
+			entry.sha256.slice(0, 12),
+			t(status ? STATUS_KEY[status] : "setting.trusted.status.checking"),
+		);
+	}
 
-		new Setting(containerEl)
-			.setName(t("setting.viewport.name"))
-			.setDesc(t("setting.viewport.desc"))
-			.addDropdown((dd) => {
-				for (const vp of VIEWPORTS) dd.addOption(vp.id, t(vp.labelKey));
-				dd.setValue(this.plugin.settings.viewport).onChange(async (value) => {
-					this.plugin.settings.viewport = value as ViewportId;
-					await this.plugin.saveSettings();
-				});
-			});
+	private cacheKey(path: string): string {
+		const entry = getEntry(this.plugin.settings.trusted, path);
+		const file = this.app.vault.getAbstractFileByPath(path);
+		const mtime = file instanceof TFile ? String(file.stat.mtime) : "missing";
+		return `${path}\n${entry?.sha256 ?? ""}\n${mtime}`;
+	}
 
-		new Setting(containerEl)
-			.setName(t("setting.autoReload.name"))
-			.setDesc(t("setting.autoReload.desc"))
-			.addToggle((tg) =>
-				tg.setValue(this.plugin.settings.autoReload).onChange(async (value) => {
-					this.plugin.settings.autoReload = value;
-					await this.plugin.saveSettings();
-				}),
-			);
+	private async checkStatuses(paths: string[]): Promise<void> {
+		if (this.checking) return;
+		this.checking = true;
+		try {
+			for (const path of paths) {
+				const key = this.cacheKey(path);
+				if (this.statusCache.has(key)) continue;
+				const entry = getEntry(this.plugin.settings.trusted, path);
+				const file = this.app.vault.getAbstractFileByPath(path);
+				let status: TrustStatus = "missing";
+				if (entry && file instanceof TFile) {
+					try {
+						status = sha256Hex(await this.app.vault.read(file)) === entry.sha256 ? "valid" : "changed";
+					} catch {
+						status = "missing";
+					}
+				}
+				this.statusCache.set(key, status);
+			}
+		} finally {
+			this.checking = false;
+		}
+		this.update();
+	}
 
-		new Setting(containerEl)
-			.setName(t("setting.embedHeight.name"))
-			.setDesc(t("setting.embedHeight.desc"))
-			.addText((tx) =>
-				tx
-					.setPlaceholder(String(DEFAULT_SETTINGS.embedHeight))
-					.setValue(String(this.plugin.settings.embedHeight))
-					.onChange(async (value) => {
-						const parsed = Number.parseInt(value, 10);
-						if (!Number.isFinite(parsed) || parsed <= 0) return;
-						this.plugin.settings.embedHeight = parsed;
-						await this.plugin.saveSettings();
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName(t("setting.strictIsolation.name"))
-			.setDesc(t("setting.strictIsolation.desc"))
-			.addToggle((tg) =>
-				tg.setValue(this.plugin.settings.strictIsolation).onChange(async (value) => {
-					this.plugin.settings.strictIsolation = value;
-					await this.plugin.saveSettings();
-				}),
-			);
+	private confirmRevokeAll(): void {
+		const count = Object.keys(this.plugin.settings.trusted).length;
+		if (count === 0) return;
+		new ConfirmModal(
+			this.app,
+			{
+				title: t("setting.trusted.revokeAll.title"),
+				confirmText: t("setting.trusted.revokeAll.confirm"),
+				cancelText: t("trust.cancel"),
+				body: (el) => {
+					el.createEl("p", { text: t("setting.trusted.revokeAll.body", String(count)) });
+				},
+			},
+			() => void this.plugin.revokeAll(),
+		).open();
 	}
 }

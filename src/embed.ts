@@ -1,7 +1,9 @@
-import { MarkdownPostProcessorContext, TFile } from "obsidian";
+import { MarkdownPostProcessorContext, MarkdownRenderChild, TAbstractFile, TFile } from "obsidian";
 import type HtmlPrototypeViewerPlugin from "./main";
-import { canOpenExternally, createFrame, openExternally } from "./frame";
+import { canOpenExternally, openExternally } from "./frame";
 import { t } from "./i18n";
+import { renderFile } from "./render";
+import { TrustDecision } from "./trust";
 
 export const EMBED_LANG = "html-preview";
 
@@ -50,10 +52,24 @@ function renderError(el: HTMLElement, message: string): void {
 	el.createDiv({ cls: "hpv-embed-error", text: message });
 }
 
+/**
+ * Lifetime of one embedded block: its listeners are removed and any pending
+ * render is discarded when the block leaves the note.
+ */
+class EmbedChild extends MarkdownRenderChild {
+	generation = 0;
+	unloaded = false;
+	decision: TrustDecision | null = null;
+
+	onunload(): void {
+		this.unloaded = true;
+	}
+}
+
 export function registerEmbed(plugin: HtmlPrototypeViewerPlugin): void {
 	plugin.registerMarkdownCodeBlockProcessor(
 		EMBED_LANG,
-		(source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
+		async (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
 			const spec = parseSpec(source);
 			if (!spec.target) {
 				renderError(el, t("embed.error.noTarget"));
@@ -92,15 +108,43 @@ export function registerEmbed(plugin: HtmlPrototypeViewerPlugin): void {
 				void plugin.app.workspace.getLeaf("tab").openFile(dest);
 			});
 
+			const statusEl = wrapper.createDiv({ cls: "hpv-status hpv-embed-status" });
 			const stage = wrapper.createDiv({ cls: "hpv-embed-stage" });
-			const frame = createFrame(plugin.app, dest, {
-				strictIsolation: plugin.settings.strictIsolation,
-			});
-			frame.style.setProperty("--hpv-frame-height", `${spec.height ?? plugin.settings.embedHeight}px`);
-			if (spec.width !== null) {
-				frame.style.setProperty("--hpv-frame-width", `${spec.width}px`);
-			}
-			stage.appendChild(frame);
+
+			const child = new EmbedChild(wrapper);
+			ctx.addChild(child);
+
+			const render = async (cacheBust: boolean): Promise<void> => {
+				const generation = ++child.generation;
+				const isCurrent = () => !child.unloaded && generation === child.generation;
+				const result = await renderFile(
+					plugin,
+					dest,
+					{ statusEl, stageEl: stage },
+					{ cacheBust, isCurrent, onReload: () => void render(true) },
+				);
+				if (!result || !isCurrent()) return;
+				child.decision = result.decision;
+				result.frame.style.setProperty("--hpv-frame-height", `${spec.height ?? plugin.settings.embedHeight}px`);
+				if (spec.width !== null) {
+					result.frame.style.setProperty("--hpv-frame-width", `${spec.width}px`);
+				}
+			};
+
+			child.registerEvent(
+				plugin.app.vault.on("modify", (changed: TAbstractFile) => {
+					if (changed.path !== dest.path) return;
+					// A trusted file is always re-evaluated: new content must not keep the old trust.
+					if (child.decision === "trusted" || plugin.settings.autoReload) void render(true);
+				}),
+			);
+			child.registerEvent(
+				plugin.onTrustChanged((path) => {
+					if (path === null || path === dest.path) void render(false);
+				}),
+			);
+
+			await render(false);
 		},
 	);
 }

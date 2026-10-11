@@ -10,15 +10,18 @@
 /* --- Full tab view --------------------------------------------------- */
 
 .hpv-view {
+	display: flex;
+	flex-direction: column;
 	padding: 0;
 	overflow: hidden;
 }
 
 .hpv-stage {
 	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
 	justify-content: center;
 	width: 100%;
-	height: 100%;
 	overflow: auto;
 	background-color: var(--background-secondary);
 }
@@ -86,4 +89,119 @@
 	background-color: var(--background-secondary);
 	border: 1px solid var(--background-modifier-border);
 	border-radius: var(--radius-m);
+}
+
+/* --- Isolation status and notices (always outside the frame) ---------- */
+
+.hpv-status {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	padding: var(--size-2-2) var(--size-4-3);
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+	background-color: var(--background-primary);
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.hpv-status:empty {
+	display: none;
+}
+
+.hpv-details > summary {
+	cursor: var(--cursor);
+	list-style-position: inside;
+}
+
+.hpv-details-body {
+	margin-top: var(--size-2-2);
+	max-width: 70ch;
+}
+
+.hpv-details-body p {
+	margin: 0 0 var(--size-2-2);
+}
+
+.hpv-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	font-weight: var(--font-medium);
+}
+
+.hpv-badge-icon {
+	display: inline-flex;
+}
+
+.hpv-badge-icon svg {
+	width: var(--icon-xs);
+	height: var(--icon-xs);
+}
+
+.hpv-badge.is-isolated {
+	color: var(--text-muted);
+}
+
+.hpv-badge.is-trusted {
+	color: var(--text-warning);
+	font-weight: var(--font-bold);
+}
+
+.hpv-notice {
+	color: var(--text-normal);
+}
+
+.hpv-notice.is-warning {
+	color: var(--text-warning);
+}
+
+.hpv-notice ul {
+	margin: var(--size-2-1) 0 0;
+	padding-inline-start: var(--size-4-6);
+	word-break: break-all;
+}
+
+.hpv-error {
+	align-self: flex-start;
+	margin: var(--size-4-4);
+	padding: var(--size-4-3);
+	font-size: var(--font-ui-small);
+	color: var(--text-error);
+	background-color: var(--background-primary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+}
+
+.hpv-error button {
+	margin-inline-start: var(--size-4-2);
+}
+
+.hpv-embed-status {
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.clickable-icon.hpv-trust-action-trusted {
+	color: var(--text-warning);
+}
+
+/* --- Confirmation dialogs --------------------------------------------- */
+
+.hpv-trust-facts {
+	display: grid;
+	grid-template-columns: max-content 1fr;
+	gap: var(--size-2-2) var(--size-4-3);
+	margin: 0 0 var(--size-4-3);
+}
+
+.hpv-trust-facts dt {
+	color: var(--text-muted);
+}
+
+.hpv-trust-facts dd {
+	margin: 0;
+	word-break: break-all;
+}
+
+.hpv-trust-hash {
+	font-family: var(--font-monospace);
 }

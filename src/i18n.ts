@@ -10,6 +10,8 @@ const EN = {
 	"action.reload": "Reload prototype",
 	"action.viewport": "Render width",
 	"action.openExternally": "Open in browser",
+	"action.trust": "Isolated · trust this file…",
+	"action.revoke": "Not isolated · revoke trust",
 
 	"viewport.full": "Full width",
 	"viewport.desktop": "Desktop — 1280 px",
@@ -19,6 +21,47 @@ const EN = {
 	"command.reload": "Reload the displayed prototype",
 	"command.openExternally": "Open the prototype in the browser",
 	"command.insertEmbed": "Insert a prototype preview in the note",
+	"command.trust": "Trust the displayed HTML file…",
+	"command.revoke": "Revoke trust for the displayed HTML file",
+
+	"status.isolated": "Isolated",
+	"status.isolated.blocked":
+		"This page has no access to Obsidian or your vault and no internet. It cannot store data (localStorage), open new windows, show alert/confirm/prompt dialogs or download files. Neighbouring files (CSS, images, other pages) do not load.",
+	"status.isolated.residual":
+		"Remaining risk: a page can still send itself to a website (one request leaves). The plugin stops it when it notices.",
+	"status.isolated.howto": "If you trust this file, use the shield button at the top to show it without isolation.",
+	"status.trusted": "Not isolated · trusted file",
+	"status.trusted.details":
+		"This file runs with the permissions of the original plugin: internet, storage, new windows and downloads and, on mobile, possibly access to your vault. If its content changes, it goes back to isolated automatically.",
+
+	"notice.changed": "This file changed since you trusted it, so it is shown isolated.",
+	"notice.relative": "{0} neighbouring file(s) will not load in isolated mode",
+	"notice.remote": "{0} internet resource(s) blocked",
+	"notice.features": "Does not work in isolated mode: {0}.",
+	"feature.popups": "new windows",
+	"feature.modals": "alert/confirm/prompt dialogs",
+	"feature.downloads": "downloads",
+	"notice.navigationCode": "This page contains code that can send it to another web page.",
+	"notice.navigated": "The page tried to leave its own document and was stopped.",
+	"notice.navigated.reload": "Reload",
+	"notice.readError": "Could not read {0}: {1}",
+
+	"trust.title": "Trust this HTML file?",
+	"trust.file": "File",
+	"trust.size": "Size",
+	"trust.hash": "Fingerprint",
+	"trust.intro": "If you trust it, this file is no longer isolated:",
+	"trust.warning.scripts": "its scripts run with the same permissions as in the original plugin;",
+	"trust.warning.network": "it can connect to the internet, open windows and download files;",
+	"trust.warning.storage": "it can store data (localStorage) and load neighbouring files;",
+	"trust.warning.mobile": "on mobile, it could access your vault;",
+	"trust.warning.changes": "if its content changes, it goes back to isolated until you trust it again.",
+	"trust.cancel": "Cancel",
+	"trust.confirm": "Trust",
+	"trust.changedMeanwhile": "The file changed while the dialog was open. Nothing was trusted; try again.",
+	"trust.done": "{0} is trusted and shown without isolation.",
+	"trust.revoked": "{0} is isolated again.",
+	"trust.error": "Could not trust {0}: {1}",
 
 	"setting.viewport.name": "Default render width",
 	"setting.viewport.desc":
@@ -27,9 +70,21 @@ const EN = {
 	"setting.autoReload.desc": "Refresh the preview whenever the HTML file changes on disk.",
 	"setting.embedHeight.name": "Preview height in notes",
 	"setting.embedHeight.desc": "Height in pixels of an html-preview block that does not specify one.",
-	"setting.strictIsolation.name": "Strict isolation",
-	"setting.strictIsolation.desc":
-		"Drops the prototype's origin: it can no longer reach the Obsidian API, but also loses localStorage and loading of neighbouring files. Enable it for HTML you did not write.",
+	"setting.isolation.name": "Isolation",
+	"setting.isolation.desc":
+		"Every HTML file opens isolated: no access to Obsidian or your vault, no internet. Only files you trust run without isolation, and only while their content stays the same. There is no switch to turn isolation off for everything.",
+	"setting.trusted.heading": "Trusted files",
+	"setting.trusted.empty": "No trusted files. Every HTML file opens isolated.",
+	"setting.trusted.item": "Trusted on {0} · fingerprint {1} · {2}",
+	"setting.trusted.status.checking": "checking…",
+	"setting.trusted.status.valid": "unchanged",
+	"setting.trusted.status.changed": "changed, shown isolated",
+	"setting.trusted.status.missing": "file not found",
+	"setting.trusted.revokeAll.name": "Revoke all",
+	"setting.trusted.revokeAll.desc": "Shows every HTML file isolated again.",
+	"setting.trusted.revokeAll.title": "Revoke trust for every file?",
+	"setting.trusted.revokeAll.body": "{0} file(s) will be shown isolated again.",
+	"setting.trusted.revokeAll.confirm": "Revoke all",
 
 	"embed.button.browser": "Browser",
 	"embed.button.tab": "Tab",
@@ -47,6 +102,8 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"action.reload": "Recharger le prototype",
 	"action.viewport": "Largeur de rendu",
 	"action.openExternally": "Ouvrir dans le navigateur",
+	"action.trust": "Isolé · faire confiance à ce fichier…",
+	"action.revoke": "Non isolé · retirer la confiance",
 
 	"viewport.full": "Pleine largeur",
 	"viewport.desktop": "Desktop — 1280 px",
@@ -56,6 +113,47 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"command.reload": "Recharger le prototype affiché",
 	"command.openExternally": "Ouvrir le prototype dans le navigateur",
 	"command.insertEmbed": "Insérer un aperçu de prototype dans la note",
+	"command.trust": "Faire confiance au fichier HTML affiché…",
+	"command.revoke": "Retirer la confiance au fichier HTML affiché",
+
+	"status.isolated": "Isolé",
+	"status.isolated.blocked":
+		"Cette page n'a accès ni à Obsidian, ni à ton coffre, ni à internet. Elle ne peut pas stocker de données (localStorage), ouvrir de fenêtres, afficher de boîtes alert/confirm/prompt ni télécharger de fichiers. Les fichiers voisins (CSS, images, autres pages) ne se chargent pas.",
+	"status.isolated.residual":
+		"Risque restant : une page peut encore s'envoyer vers un site web (une requête part). Le plugin l'arrête dès qu'il le remarque.",
+	"status.isolated.howto": "Si tu fais confiance à ce fichier, utilise le bouton bouclier en haut pour l'afficher sans isolation.",
+	"status.trusted": "Non isolé · fichier de confiance",
+	"status.trusted.details":
+		"Ce fichier s'exécute avec les permissions du plugin d'origine : internet, stockage, nouvelles fenêtres et téléchargements et, sur mobile, peut-être l'accès à ton coffre. Si son contenu change, il redevient isolé automatiquement.",
+
+	"notice.changed": "Ce fichier a changé depuis que tu lui as fait confiance : il est affiché isolé.",
+	"notice.relative": "{0} fichier(s) voisin(s) ne se chargeront pas en mode isolé",
+	"notice.remote": "{0} ressource(s) internet bloquée(s)",
+	"notice.features": "Ne fonctionne pas en mode isolé : {0}.",
+	"feature.popups": "nouvelles fenêtres",
+	"feature.modals": "boîtes alert/confirm/prompt",
+	"feature.downloads": "téléchargements",
+	"notice.navigationCode": "Cette page contient du code qui peut l'envoyer vers une autre page web.",
+	"notice.navigated": "La page a essayé de quitter son propre document et a été arrêtée.",
+	"notice.navigated.reload": "Recharger",
+	"notice.readError": "Impossible de lire {0} : {1}",
+
+	"trust.title": "Faire confiance à ce fichier HTML ?",
+	"trust.file": "Fichier",
+	"trust.size": "Taille",
+	"trust.hash": "Empreinte",
+	"trust.intro": "Si tu lui fais confiance, ce fichier n'est plus isolé :",
+	"trust.warning.scripts": "ses scripts s'exécutent avec les mêmes permissions que dans le plugin d'origine ;",
+	"trust.warning.network": "il peut se connecter à internet, ouvrir des fenêtres et télécharger des fichiers ;",
+	"trust.warning.storage": "il peut stocker des données (localStorage) et charger des fichiers voisins ;",
+	"trust.warning.mobile": "sur mobile, il pourrait accéder à ton coffre ;",
+	"trust.warning.changes": "si son contenu change, il redevient isolé jusqu'à ce que tu lui refasses confiance.",
+	"trust.cancel": "Annuler",
+	"trust.confirm": "Faire confiance",
+	"trust.changedMeanwhile": "Le fichier a changé pendant que la fenêtre était ouverte. Rien n'a été approuvé ; réessaie.",
+	"trust.done": "{0} est de confiance et s'affiche sans isolation.",
+	"trust.revoked": "{0} est de nouveau isolé.",
+	"trust.error": "Impossible de faire confiance à {0} : {1}",
 
 	"setting.viewport.name": "Largeur d'affichage par défaut",
 	"setting.viewport.desc":
@@ -64,9 +162,21 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"setting.autoReload.desc": "Rafraîchit le rendu dès que le fichier HTML est modifié sur le disque.",
 	"setting.embedHeight.name": "Hauteur des aperçus dans les notes",
 	"setting.embedHeight.desc": "Hauteur en pixels d'un bloc html-preview qui n'en précise pas.",
-	"setting.strictIsolation.name": "Isolation stricte",
-	"setting.strictIsolation.desc":
-		"Prive le prototype de son origine : il ne peut plus atteindre l'API Obsidian, mais perd aussi localStorage et le chargement de fichiers voisins. À activer pour du HTML dont tu n'es pas l'auteur.",
+	"setting.isolation.name": "Isolation",
+	"setting.isolation.desc":
+		"Chaque fichier HTML s'ouvre isolé : sans accès à Obsidian ni à ton coffre, sans internet. Seuls les fichiers auxquels tu fais confiance s'exécutent sans isolation, et seulement tant que leur contenu ne change pas. Il n'existe pas d'interrupteur pour tout désisoler.",
+	"setting.trusted.heading": "Fichiers de confiance",
+	"setting.trusted.empty": "Aucun fichier de confiance. Chaque fichier HTML s'ouvre isolé.",
+	"setting.trusted.item": "Approuvé le {0} · empreinte {1} · {2}",
+	"setting.trusted.status.checking": "vérification…",
+	"setting.trusted.status.valid": "inchangé",
+	"setting.trusted.status.changed": "modifié, affiché isolé",
+	"setting.trusted.status.missing": "fichier introuvable",
+	"setting.trusted.revokeAll.name": "Tout retirer",
+	"setting.trusted.revokeAll.desc": "Affiche de nouveau chaque fichier HTML isolé.",
+	"setting.trusted.revokeAll.title": "Retirer la confiance à tous les fichiers ?",
+	"setting.trusted.revokeAll.body": "{0} fichier(s) seront de nouveau affichés isolés.",
+	"setting.trusted.revokeAll.confirm": "Tout retirer",
 
 	"embed.button.browser": "Navigateur",
 	"embed.button.tab": "Onglet",
@@ -74,6 +184,96 @@ const FR: Partial<Record<TranslationKey, string>> = {
 		"Aucun fichier indiqué. Attendu : un chemin, un lien [[…]] ou `path: …`.",
 	"embed.error.notFound": "Fichier introuvable : {0}",
 	"embed.error.notHtml": "{0} n'est pas un fichier HTML.",
+};
+
+const ES: Partial<Record<TranslationKey, string>> = {
+	"view.title": "Prototipo HTML",
+
+	"action.reload": "Recargar el prototipo",
+	"action.viewport": "Ancho de renderizado",
+	"action.openExternally": "Abrir en el navegador",
+	"action.trust": "Aislado · confiar en este archivo…",
+	"action.revoke": "Sin aislamiento · retirar la confianza",
+
+	"viewport.full": "Ancho completo",
+	"viewport.desktop": "Escritorio — 1280 px",
+	"viewport.tablet": "Tableta — 834 px",
+	"viewport.mobile": "Móvil — 390 px",
+
+	"command.reload": "Recargar el prototipo mostrado",
+	"command.openExternally": "Abrir el prototipo en el navegador",
+	"command.insertEmbed": "Insertar una vista previa de prototipo en la nota",
+	"command.trust": "Confiar en el archivo HTML mostrado…",
+	"command.revoke": "Retirar la confianza al archivo HTML mostrado",
+
+	"status.isolated": "Aislado",
+	"status.isolated.blocked":
+		"Esta página no tiene acceso a Obsidian, a tu vault ni a internet. No puede guardar datos (localStorage), abrir ventanas nuevas, mostrar diálogos alert/confirm/prompt ni descargar archivos. Los archivos vecinos (CSS, imágenes, otras páginas) no se cargan.",
+	"status.isolated.residual":
+		"Riesgo que queda: una página aún puede mandarse a sí misma a una web (sale una petición). El plugin la detiene en cuanto lo nota.",
+	"status.isolated.howto": "Si confías en este archivo, usa el botón del escudo de arriba para verlo sin aislamiento.",
+	"status.trusted": "Sin aislamiento · archivo de confianza",
+	"status.trusted.details":
+		"Este archivo se ejecuta con los permisos del plugin original: internet, almacenamiento, ventanas nuevas y descargas y, en móvil, posiblemente acceso a tu vault. Si su contenido cambia, vuelve a aislado automáticamente.",
+
+	"notice.changed": "Este archivo cambió desde que confiaste en él, así que se muestra aislado.",
+	"notice.relative": "{0} archivo(s) vecino(s) no se cargarán en modo aislado",
+	"notice.remote": "{0} recurso(s) de internet bloqueado(s)",
+	"notice.features": "No funciona en modo aislado: {0}.",
+	"feature.popups": "ventanas nuevas",
+	"feature.modals": "diálogos alert/confirm/prompt",
+	"feature.downloads": "descargas",
+	"notice.navigationCode": "Esta página contiene código que puede mandarla a otra web.",
+	"notice.navigated": "La página intentó salir de su propio documento y se ha detenido.",
+	"notice.navigated.reload": "Volver a cargar",
+	"notice.readError": "No se pudo leer {0}: {1}",
+
+	"trust.title": "¿Confiar en este archivo HTML?",
+	"trust.file": "Archivo",
+	"trust.size": "Tamaño",
+	"trust.hash": "Huella",
+	"trust.intro": "Si confías en él, este archivo deja de estar aislado:",
+	"trust.warning.scripts": "sus scripts se ejecutan con los mismos permisos que en el plugin original;",
+	"trust.warning.network": "puede conectarse a internet, abrir ventanas y descargar archivos;",
+	"trust.warning.storage": "puede guardar datos (localStorage) y cargar archivos vecinos;",
+	"trust.warning.mobile": "en el móvil, podría acceder a tu vault;",
+	"trust.warning.changes": "si su contenido cambia, vuelve a aislado hasta que vuelvas a confiar en él.",
+	"trust.cancel": "Cancelar",
+	"trust.confirm": "Confiar",
+	"trust.changedMeanwhile": "El archivo cambió mientras el diálogo estaba abierto. No se ha confiado en nada; vuelve a intentarlo.",
+	"trust.done": "{0} es de confianza y se muestra sin aislamiento.",
+	"trust.revoked": "{0} vuelve a estar aislado.",
+	"trust.error": "No se pudo confiar en {0}: {1}",
+
+	"setting.viewport.name": "Ancho de renderizado por defecto",
+	"setting.viewport.desc":
+		"Ancho aplicado al abrir un archivo HTML. Se puede cambiar en cualquier momento desde la barra de la pestaña.",
+	"setting.autoReload.name": "Recargar automáticamente",
+	"setting.autoReload.desc": "Actualiza la vista previa cuando el archivo HTML cambia en el disco.",
+	"setting.embedHeight.name": "Altura de las vistas previas en notas",
+	"setting.embedHeight.desc": "Altura en píxeles de un bloque html-preview que no indique una.",
+	"setting.isolation.name": "Aislamiento",
+	"setting.isolation.desc":
+		"Todo archivo HTML se abre aislado: sin acceso a Obsidian ni a tu vault, sin internet. Solo los archivos en los que confías se ejecutan sin aislamiento, y solo mientras su contenido no cambie. No existe ningún interruptor para quitar el aislamiento a todo.",
+	"setting.trusted.heading": "Archivos de confianza",
+	"setting.trusted.empty": "No hay archivos de confianza. Todo archivo HTML se abre aislado.",
+	"setting.trusted.item": "Confiado el {0} · huella {1} · {2}",
+	"setting.trusted.status.checking": "comprobando…",
+	"setting.trusted.status.valid": "sin cambios",
+	"setting.trusted.status.changed": "cambiado, se muestra aislado",
+	"setting.trusted.status.missing": "archivo no encontrado",
+	"setting.trusted.revokeAll.name": "Retirar todos",
+	"setting.trusted.revokeAll.desc": "Vuelve a mostrar aislado todo archivo HTML.",
+	"setting.trusted.revokeAll.title": "¿Retirar la confianza a todos los archivos?",
+	"setting.trusted.revokeAll.body": "{0} archivo(s) volverán a mostrarse aislados.",
+	"setting.trusted.revokeAll.confirm": "Retirar todos",
+
+	"embed.button.browser": "Navegador",
+	"embed.button.tab": "Pestaña",
+	"embed.error.noTarget":
+		"No se ha indicado ningún archivo. Se espera una ruta, un enlace [[…]] o `path: …`.",
+	"embed.error.notFound": "Archivo no encontrado: {0}",
+	"embed.error.notHtml": "{0} no es un archivo HTML.",
 };
 
 function currentLanguage(): string {
@@ -86,8 +286,9 @@ function currentLanguage(): string {
 
 /** Translates `key`, substituting `{0}`, `{1}`… with `params`. */
 export function t(key: TranslationKey, ...params: string[]): string {
-	const localized = currentLanguage().startsWith("fr") ? FR[key] : undefined;
-	const template = localized ?? EN[key];
+	const language = currentLanguage();
+	const table = language.startsWith("fr") ? FR : language.startsWith("es") ? ES : undefined;
+	const template = table?.[key] ?? EN[key];
 	return params.reduce<string>(
 		(acc, value, index) => acc.split(`{${index}}`).join(value),
 		template,

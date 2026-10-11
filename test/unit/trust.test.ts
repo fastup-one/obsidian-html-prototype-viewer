@@ -9,6 +9,7 @@ import {
 	renamePath,
 	revoke,
 	sanitizeStore,
+	touchesPath,
 	trust,
 } from "../../src/trust";
 
@@ -60,6 +61,16 @@ test("operations never mutate their input", () => {
 	renamePath(s, "d", "e");
 	removePath(s, "d");
 	assert.equal(JSON.stringify(s), before);
+});
+
+test("touchesPath: file, folder and similar prefixes", () => {
+	const s = store({ "a/b/x.html": H1, "z.html": H1 });
+	assert.equal(touchesPath(s, "z.html"), true);
+	assert.equal(touchesPath(s, "a/b"), true);
+	assert.equal(touchesPath(s, "a"), true);
+	assert.equal(touchesPath(s, "a/bc"), false);
+	assert.equal(touchesPath(s, "z.htm"), false);
+	assert.equal(touchesPath(emptyStore(), "z.html"), false);
 });
 
 test("revoke", () => {

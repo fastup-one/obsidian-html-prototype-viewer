@@ -56,6 +56,11 @@ export function revoke(store: TrustStore, path: string): TrustStore {
 	return out;
 }
 
+/** Whether `path`, or anything under the folder `path/`, has an entry. */
+export function touchesPath(store: TrustStore, path: string): boolean {
+	return Object.keys(store).some((key) => key === path || key.startsWith(path + "/"));
+}
+
 /** Follows a rename or move of a file, or of a folder (every entry under `oldPath/`). */
 export function renamePath(store: TrustStore, oldPath: string, newPath: string): TrustStore {
 	const moves = (key: string) => key === oldPath || key.startsWith(oldPath + "/");

@@ -1,23 +1,5 @@
 import { App, TFile } from "obsidian";
-
-/**
- * Permissions granted to the prototype in every case. `allow-same-origin` is
- * appended on top unless strict isolation is requested (see settings).
- */
-const SANDBOX_FLAGS = [
-	"allow-scripts",
-	"allow-forms",
-	"allow-popups",
-	"allow-popups-to-escape-sandbox",
-	"allow-modals",
-	"allow-downloads",
-];
-
-export function sandboxAttr(strictIsolation: boolean): string {
-	const flags = [...SANDBOX_FLAGS];
-	if (!strictIsolation) flags.push("allow-same-origin");
-	return flags.join(" ");
-}
+import { RenderMode, assertSrcdocSafe, prepareSrcdoc, sandboxFlags } from "./strict";
 
 /**
  * Obsidian's internal URL for a vault file: `app://<hash>/<path>?<mtime>` on
@@ -29,23 +11,37 @@ export function resourceUrl(app: App, file: TFile): string {
 	return app.vault.getResourcePath(file);
 }
 
-export interface FrameOptions {
-	strictIsolation: boolean;
-	/** Appends a parameter to the src to bypass the cache on a manual reload. */
-	cacheBust?: boolean;
-}
+export type FrameSource =
+	/** The file's content, already read: loaded through `srcdoc`. */
+	| { mode: "isolated"; html: string }
+	/** Loaded from disk through `src`, exactly like the upstream non-strict mode. */
+	| { mode: "trusted"; cacheBust?: boolean };
 
-export function createFrame(app: App, file: TFile, opts: FrameOptions): HTMLIFrameElement {
+export function createFrame(app: App, file: TFile, source: FrameSource): HTMLIFrameElement {
+	const mode: RenderMode = source.mode;
+	const flags = sandboxFlags(mode);
 	const frame = createEl("iframe", { cls: "hpv-frame" });
-	frame.setAttribute("sandbox", sandboxAttr(opts.strictIsolation));
+	// Invariant 2: the sandbox is fixed before any content source is set and before
+	// the frame reaches the DOM, and never changed afterwards: every render creates
+	// a new frame.
+	frame.setAttribute("sandbox", flags.join(" "));
 	frame.setAttribute("referrerpolicy", "no-referrer");
 	frame.setAttribute("title", file.basename);
 
-	let url = resourceUrl(app, file);
-	if (opts.cacheBust) {
-		url += (url.includes("?") ? "&" : "?") + "hpv=" + Date.now();
+	if (source.mode === "isolated") {
+		// Invariants 1 and 3: `srcdoc` only ever goes into a sandbox without
+		// `allow-same-origin` (it would inherit Obsidian's origin otherwise).
+		assertSrcdocSafe(flags);
+		frame.srcdoc = prepareSrcdoc(source.html).html;
+	} else {
+		// `src` on purpose: the trusted frame gets the file's own `app://` origin,
+		// never Obsidian's.
+		let url = resourceUrl(app, file);
+		if (source.cacheBust) {
+			url += (url.includes("?") ? "&" : "?") + "hpv=" + Date.now();
+		}
+		frame.src = url;
 	}
-	frame.src = url;
 	return frame;
 }
 
