@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Reaches for Obsidian</title>
+<style>
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+	body { font: 16px system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	.langsw { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 12px; }
+	.langsw button { font: 600 12px system-ui, sans-serif; padding: 3px 9px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: #333; cursor: pointer; }
+	.langsw button[aria-pressed="true"] { background: #333; border-color: #333; color: #fff; }
+	#banner { font-size: 22px; font-weight: 700; padding: 16px 18px; border-radius: 10px; color: #fff; background: #777; }
+	.green { background: #0a7d32 !important; }
+	.red { background: #b00020 !important; }
+</style>
+</head>
+<body>
+<div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+<div id="banner">Checking… · Comprobando…</div>
+<p class="en">This page tries to list the files of your vault through Obsidian. Isolated, it must fail. Open the trust
+dialog (shield button): the review must warn, in red, that it tries to reach the window around it. Then click
+<strong>Cancel</strong> — never trust this file.</p>
+<p class="es">Esta página intenta listar los archivos de tu vault a través de Obsidian. Aislada, debe fallar. Abre el
+diálogo de confianza (botón del escudo): la revisión debe avisar, en rojo, de que intenta llegar a la ventana que la
+rodea. Después pulsa <strong>Cancelar</strong> — no confíes nunca en este archivo.</p>
+<script>
+	(function () {
+		var lang = "en";
+		var count = null;
+		try { count = window.parent.app.vault.getFiles().length; } catch (e) {}
+		function T(en, es) { return lang === "es" ? es : en; }
+		function render() {
+			var banner = document.getElementById("banner");
+			if (count === null) {
+				banner.textContent = T("🟢 GREEN: blocked — it cannot see your vault", "🟢 VERDE: bloqueado — no puede ver tu vault");
+				banner.className = "green";
+			} else {
+				banner.textContent = T("🔴 RED: it can see the " + count + " files of your vault", "🔴 ROJO: puede ver los " + count + " archivos de tu vault");
+				banner.className = "red";
+			}
+			document.title = banner.textContent;
+		}
+		render();
+		document.querySelectorAll(".langsw button").forEach(function (b) {
+			b.addEventListener("click", function () {
+				lang = b.getAttribute("data-l") === "es" ? "es" : "en";
+				document.documentElement.setAttribute("data-lang", lang);
+				document.documentElement.lang = lang;
+				document.querySelectorAll(".langsw button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+				render();
+			});
+		});
+	})();
+</script>
+</body>
+</html>

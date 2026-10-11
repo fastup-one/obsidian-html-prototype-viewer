@@ -30,6 +30,12 @@ Above every page there is a line with a shield and the word **Isolated**. That i
    «Isolated» line above it.
 10. **Settings** → Obsidian settings → *HTML Prototype Viewer (Strict)*: the isolation explanation and the «Trusted
     files» list (empty if you revoked everything).
+11. **08-reaches-obsidian** → **🟢 GREEN: blocked**. Click the shield: the dialog's review warns in red that it tries to
+    reach the window around it. Click **Cancel** — never trust this file.
+12. **Phone only — trust needs your computer's approval:** on the phone, the shield refuses to trust a file until the
+    computer has trusted that exact content. Once approved (and synced), the phone asks for its own confirmation with a
+    checkbox, and the label reads **Full vault access · trusted file**. Revoke it on the computer: within 30 seconds the
+    phone shows it isolated again.
 
 What must **never** happen: a blank page with no explanation.
 
@@ -54,5 +60,10 @@ Cada página tiene un selector **EN / ES** arriba a la derecha.
    retira la confianza.
 9. [[Note with preview]] → la prueba se ve dentro de la nota en **🟢 VERDE**.
 10. **Ajustes** → *HTML Prototype Viewer (Strict)*: explicación del aislamiento y lista de archivos de confianza.
+11. **08-reaches-obsidian** → **🟢 VERDE: bloqueado**. Escudo: la revisión del diálogo avisa en rojo de que intenta
+    llegar a la ventana que la rodea. Pulsa **Cancelar** — no confíes nunca en este archivo.
+12. **Solo en el móvil:** el escudo no deja confiar hasta que el ordenador haya confiado en ese contenido exacto. Con la
+    aprobación (ya sincronizada), el móvil pide su propia confirmación con una casilla y la etiqueta dice **Acceso
+    completo al vault · archivo de confianza**. Retírala en el ordenador: en 30 segundos el móvil vuelve a aislado.
 
 Lo que no debe pasar nunca: una página en blanco sin explicación.

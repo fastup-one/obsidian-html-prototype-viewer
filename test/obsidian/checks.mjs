@@ -33,7 +33,7 @@ const UI = {
 		changed: "changed since you trusted it",
 		size: "Size",
 		fingerprint: "Fingerprint",
-		mobile: "on mobile, it could access your vault",
+		mobile: "approved for your phone",
 		cancel: "Cancel",
 		trust: "Trust",
 		revokeAria: "revoke trust",
@@ -42,6 +42,12 @@ const UI = {
 		unchanged: "unchanged",
 		revokeAll: "Revoke all",
 		revokeAllTitle: "Revoke trust for every file?",
+		reviewHost: "Tries to reach the window around it",
+		reviewStorage: "Stores data in the browser",
+		phoneWarning: "FULL access to your vault",
+		fullAccess: "Full vault access",
+		unapproved: "has not approved this exact content",
+		needsApproval: "Trust this file on your computer first",
 		date: (text) => /[A-Z][a-z]{2} \d{1,2}, 2026/.test(text),
 	},
 	es: {
@@ -56,7 +62,7 @@ const UI = {
 		changed: "cambió desde que confiaste",
 		size: "Tamaño",
 		fingerprint: "Huella",
-		mobile: "en el móvil, podría acceder a tu vault",
+		mobile: "aprobado para tu móvil",
 		cancel: "Cancelar",
 		trust: "Confiar",
 		revokeAria: "retirar la confianza",
@@ -65,6 +71,12 @@ const UI = {
 		unchanged: "sin cambios",
 		revokeAll: "Retirar todos",
 		revokeAllTitle: "¿Retirar la confianza a todos",
+		reviewHost: "Intenta llegar a la ventana que lo rodea",
+		reviewStorage: "Guarda datos en el navegador",
+		phoneWarning: "acceso COMPLETO a tu vault",
+		fullAccess: "Acceso completo al vault",
+		unapproved: "no ha aprobado este contenido exacto",
+		needsApproval: "Primero confía en este archivo en tu ordenador",
 		date: (text) => /\d{1,2} [a-z]{3} 2026/.test(text) && !/\b(AM|PM)\b/.test(text),
 	},
 }[lang];
@@ -111,6 +123,9 @@ const HELPERS = `window.__hpv = {
 	},
 	async trusted() {
 		try { return JSON.parse(await app.vault.adapter.read(".obsidian/plugins/${ID}/data.json")).trusted ?? {}; } catch { return {}; }
+	},
+	async approvals() {
+		try { return JSON.parse(await app.vault.adapter.read(".obsidian/plugins/${ID}/approvals.json")).approvals ?? null; } catch { return null; }
 	},
 	// Modals open in Obsidian's active window, which is the settings window while it is open (1.14+).
 	modal() { return activeDocument.querySelector(".hpv-confirm-modal")?.innerText ?? null; },
@@ -256,6 +271,8 @@ await attempt("trust flow", async () => {
 
 	check("trust command available on an isolated file", await js(`__hpv.cmd("trust-prototype")`), null);
 	const modal = await waitFor(() => js("__hpv.modal()"), { what: "trust dialog" });
+	check("dialog review lists browser storage for 07", modal.includes(UI.reviewStorage), modal);
+	check("desktop dialog has no acknowledgement checkbox", !(await js("!!activeDocument.querySelector('.hpv-confirm-modal .hpv-ack')")), null);
 	check("dialog shows path, size, fingerprint and the mobile warning",
 		modal.includes("07-trust.html") && modal.includes(UI.size) && new RegExp(`${UI.fingerprint}\\s*\\n?\\s*[0-9a-f]{12}`).test(modal) && modal.includes(UI.mobile), modal);
 	await shot("trust-dialog");
@@ -286,6 +303,8 @@ await attempt("trust flow", async () => {
 	check("trusted: upstream iframe (src, upstream flags + allow-same-origin, no srcdoc)", info.sandbox === TRUSTED_FLAGS && info.src && !info.srcdoc, info);
 	const trusted = await js("__hpv.trusted()");
 	check("trusted entry saved with the content hash", /^[0-9a-f]{64}$/.test(trusted["07-trust.html"]?.sha256 ?? ""), trusted);
+	const approvals = await js("__hpv.approvals()");
+	check("desktop writes approvals.json: the trusted content's hash, for the phone", approvals && approvals[trusted["07-trust.html"]?.sha256]?.path === "07-trust.html" && Object.keys(approvals).length === 1, approvals);
 	await waitFor(async () => (await inFrame("document.body.innerText")).includes("1 time"), { what: "first visit" });
 	await shot("trusted");
 	await js(`__hpv.cmd("reload-prototype")`);
@@ -305,11 +324,13 @@ await attempt("trust flow", async () => {
 	await js(`app.vault.createFolder("folder").catch(() => {}).then(() => app.fileManager.renameFile(__hpv.file("07-trust.html"), "folder/07-renamed.html")).then(() => true)`);
 	await waitFor(async () => Object.keys(await js("__hpv.trusted()")).includes("folder/07-renamed.html"), { what: "trust follows rename" });
 	await sleep(500);
+	check("approval follows the rename (same hash, new path)", Object.values((await js("__hpv.approvals()")) ?? {}).some((a) => a.path === "folder/07-renamed.html"), await js("__hpv.approvals()"));
 	check("rename/move keeps the trust", (await js("__hpv.status()")).includes(UI.trusted) && !Object.keys(await js("__hpv.trusted()")).includes("07-trust.html"), await js("__hpv.trusted()"));
 
 	await js(`[...__hpv.leaf.view.containerEl.querySelectorAll(".view-action")].find((a) => (a.getAttribute("aria-label") || "").includes(${JSON.stringify(UI.revokeAria)})).click(); true`);
 	await waitFor(() => js(`__hpv.status().includes(${JSON.stringify(UI.isolated)})`), { what: "revoked" });
 	check("shield button revokes at once, without a dialog", (await js("__hpv.modal()")) === null && Object.keys(await js("__hpv.trusted()")).length === 0, await js("__hpv.trusted()"));
+	check("revoking withdraws the approval for the phone", Object.keys((await js("__hpv.approvals()")) ?? { x: 1 }).length === 0, await js("__hpv.approvals()"));
 	await js(`app.fileManager.renameFile(__hpv.file("folder/07-renamed.html"), "07-trust.html").then(() => true)`);
 });
 
@@ -339,9 +360,72 @@ await attempt("trusted self-check and settings", async () => {
 	win.close();
 	await waitFor(async () => Object.keys(await js("__hpv.trusted()")).length === 0, { what: "revoke all" });
 	check(`'${UI.revokeAll}' (with confirmation) empties the list`, true, null);
+	await waitFor(async () => Object.keys((await js("__hpv.approvals()")) ?? { x: 1 }).length === 0, { what: "approvals emptied" });
+	check(`'${UI.revokeAll}' also withdraws every approval`, true, null);
 	await js(`app.setting.close(); true`);
 	await waitFor(async () => (await frameTitle()).includes("GREEN"), { what: "02 isolated again" });
 	check(`02 isolated again after '${UI.revokeAll}'`, true, null);
+});
+
+// --- A page that reaches for Obsidian: blocked, and flagged by the review ---------------------------
+
+await attempt("08 reaches for Obsidian", async () => {
+	await open("08-reaches-obsidian.html");
+	const title = await waitFor(async () => { const t = await frameTitle(); return /GREEN|RED/.test(t) && t; }, { what: "08 verdict" });
+	check("08 isolated: its attempt to list the vault is blocked (GREEN)", title.includes("GREEN"), title);
+	await js(`__hpv.cmd("trust-prototype")`);
+	const modal = await waitFor(() => js("__hpv.modal()"), { what: "08 trust dialog" });
+	check("08 trust dialog review warns that it reaches for Obsidian", modal.includes(UI.reviewHost) && (await js("!!activeDocument.querySelector('.hpv-review li.is-danger')")), modal);
+	await shot("08-review");
+	await js(`__hpv.clickModal(${JSON.stringify(UI.cancel)})`);
+	await waitFor(() => js("__hpv.modal() === null"), { what: "08 dialog closed" });
+	check("08 cancelled: nothing trusted, no approval", Object.keys(await js("__hpv.trusted()")).length === 0 && Object.keys((await js("__hpv.approvals()")) ?? {}).length === 0, null);
+});
+
+// --- Phone rule, simulated on desktop ---------------------------------------------------------------
+// The plugin has no switch for this: the test flips the instance's platform fields (test tooling only).
+
+await attempt("phone rule (simulated)", async () => {
+	const P = `app.plugins.plugins["${ID}"]`;
+	const q = (text) => JSON.stringify(text);
+	const phoneMode = (on) => js(`(${P}.requiresApproval = ${on}, ${P}.writesApprovals = ${!on}, true)`);
+	const trustButton = `[...activeDocument.querySelectorAll(".hpv-confirm-modal button")].find((b) => b.innerText.trim() === ${q(UI.trust)})`;
+
+	await phoneMode(false);
+	await open("07-trust.html");
+	await js(`__hpv.cmd("trust-prototype")`);
+	await waitFor(() => js("__hpv.modal()"), { what: "desktop trust dialog" });
+	await js(`__hpv.clickModal(${q(UI.trust)})`);
+	await waitFor(async () => Object.keys((await js("__hpv.approvals()")) ?? {}).length === 1, { what: "desktop approval" });
+
+	await phoneMode(true);
+	await js(`${P}.revokePath("07-trust.html").then(() => true)`);
+	check("phone: its own trust list is empty, the desktop approval is there", Object.keys(await js(`${P}.settings.trusted`)).length === 0 && Object.keys((await js("__hpv.approvals()")) ?? {}).length === 1, await js("__hpv.approvals()"));
+
+	await js(`__hpv.cmd("trust-prototype")`);
+	const modal = await waitFor(() => js("__hpv.modal()"), { what: "phone trust dialog" });
+	const state = await js(`({ hasAck: !!activeDocument.querySelector(".hpv-confirm-modal .hpv-ack input"), disabled: ${trustButton}.disabled })`);
+	check("phone dialog: full-access warning, Trust disabled until the checkbox is ticked", modal.includes(UI.phoneWarning) && state.hasAck && state.disabled, { modal, state });
+	await shot("phone-dialog");
+	await js(`(activeDocument.querySelector(".hpv-confirm-modal .hpv-ack input").click(), true)`);
+	check("phone dialog: the checkbox enables Trust", !(await js(`${trustButton}.disabled`)), null);
+	await js(`__hpv.clickModal(${q(UI.trust)})`);
+	await waitFor(() => js(`__hpv.status().includes(${q(UI.fullAccess)})`), { what: "full access label" });
+	check(`phone: trusted, labelled '${UI.fullAccess}'`, (await js("__hpv.frameInfo()")).sandbox === TRUSTED_FLAGS, await js("__hpv.status()"));
+	await shot("phone-trusted");
+
+	await js(`app.vault.adapter.write(".obsidian/plugins/${ID}/approvals.json", JSON.stringify({ version: 1, approvals: {} })).then(() => true)`);
+	await js(`__hpv.cmd("reload-prototype")`);
+	await waitFor(() => js(`__hpv.status().includes(${q(UI.unapproved)})`), { what: "unapproved notice" });
+	check("phone: approval withdrawn on the computer → isolated, with a notice", (await js("__hpv.frameInfo()")).sandbox === ISOLATED_FLAGS, await js("__hpv.status()"));
+	await shot("phone-unapproved");
+
+	await js(`${P}.revokePath("07-trust.html").then(() => true)`);
+	await js(`(document.querySelectorAll(".notice").forEach((n) => n.remove()), true)`);
+	await js(`__hpv.cmd("trust-prototype")`);
+	await sleep(1000);
+	check("phone: without approval no dialog opens, a notice explains why", (await js("__hpv.modal()")) === null && (await js("__hpv.notices()")).includes(UI.needsApproval), await js("__hpv.notices()"));
+	await phoneMode(false);
 });
 
 // --- Upstream settings never grant trust ----------------------------------------------------------

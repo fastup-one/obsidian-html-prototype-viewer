@@ -91,10 +91,15 @@ export async function connect(port, match = MAIN_WINDOW, { timeoutMs = 60000 } =
 		}
 	};
 
-	async function evaluate(expression, { sessionId, contextId, awaitPromise = true } = {}) {
+	/** Every evaluation has a deadline: a step that never answers fails loudly instead of hanging the run. */
+	async function evaluate(expression, { sessionId, contextId, awaitPromise = true, timeoutMs = 30000 } = {}) {
 		const params = { expression, returnByValue: true, awaitPromise };
 		if (contextId) params.contextId = contextId;
-		const r = await send("Runtime.evaluate", params, sessionId || undefined);
+		let timer;
+		const deadline = new Promise((_, rej) => {
+			timer = setTimeout(() => rej(new Error(`no answer within ${timeoutMs} ms: ${expression.slice(0, 120)}`)), timeoutMs);
+		});
+		const r = await Promise.race([send("Runtime.evaluate", params, sessionId || undefined), deadline]).finally(() => clearTimeout(timer));
 		if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
 		return r.result.value;
 	}
