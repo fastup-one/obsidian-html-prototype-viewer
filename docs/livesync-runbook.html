@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Self-hosted LiveSync · runbook</title>
+<!-- Self-contained: no external resources. English by default, also without scripts; the EN/ES switch only changes
+     which language is visible. Progress and parameters are kept in this browser only when the file is trusted. -->
+<style>
+:root{
+  --bg:#F3F5F6; --surface:#FFFFFF; --sunken:#E9EDF0; --fg:#14191E; --muted:#56616C; --line:#D5DBE0;
+  --accent:#1B5E8E; --accent-soft:#E1ECF5;
+  --ok:#1C6B44; --ok-soft:#DFF0E6; --warn:#8A5300; --warn-soft:#FBEFD6; --danger:#A3291B; --danger-soft:#F9E4E0;
+  --code-bg:#EEF1F4; --code-fg:#1B2530;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --f-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E1216; --surface:#151B21; --sunken:#1B232A; --fg:#E4E9ED; --muted:#98A4AF; --line:#2A333C;
+    --accent:#74B3E0; --accent-soft:#16283A;
+    --ok:#72CC9A; --ok-soft:#12291C; --warn:#EDB45A; --warn-soft:#2D2413; --danger:#F08C7D; --danger-soft:#321A18;
+    --code-bg:#1B232A; --code-fg:#D7DEE4; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E1216; --surface:#151B21; --sunken:#1B232A; --fg:#E4E9ED; --muted:#98A4AF; --line:#2A333C;
+  --accent:#74B3E0; --accent-soft:#16283A;
+  --ok:#72CC9A; --ok-soft:#12291C; --warn:#EDB45A; --warn-soft:#2D2413; --danger:#F08C7D; --danger-soft:#321A18;
+  --code-bg:#1B232A; --code-fg:#D7DEE4; color-scheme:dark;
+}
+/* Language: English unless Spanish is selected */
+:root:not([data-lang="es"]) .es{display:none!important}
+:root[data-lang="es"] .en{display:none!important}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--accent);text-underline-offset:2px}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+code{background:var(--sunken);padding:1px 5px;border-radius:4px;overflow-wrap:anywhere}
+button,input,select{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.layout{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+nav.toc{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:20px 16px;border-right:1px solid var(--line);background:var(--surface);font-size:.9rem}
+nav.toc ol{list-style:none;margin:8px 0 0;padding:0}
+nav.toc li a{display:flex;gap:8px;padding:5px 6px;border-radius:var(--r);color:var(--fg);text-decoration:none}
+nav.toc li a:hover{background:var(--accent-soft)}
+nav.toc .n{min-width:1.2em;color:var(--muted);font-variant-numeric:tabular-nums}
+nav.toc .n:empty{display:none}
+.toc-label{margin-top:14px;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+main{min-width:0;max-width:980px;padding:28px 32px 80px}
+
+.langsw{display:inline-flex;gap:4px;margin-top:6px}
+.lang-btn{padding:4px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);cursor:pointer;font-weight:600;font-size:.8rem}
+.lang-btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.top-tools{display:flex;gap:8px;align-items:center}
+.theme-btn{padding:4px 10px;margin-top:6px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);cursor:pointer;font-size:.8rem}
+
+header.top{margin-bottom:24px}
+.top-row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.eyebrow{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:600}
+h1{font-size:2rem;line-height:1.2;margin:6px 0 8px}
+.lede{color:var(--muted);margin:0 0 12px;max-width:70ch}
+.meta{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted)}
+.phases{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:16px}
+.phase-tile{display:flex;flex-direction:column;gap:2px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);text-decoration:none}
+.phase-tile:hover{border-color:var(--accent)}
+.phase-tile .pn{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.phase-tile .where{font-size:.82rem;color:var(--muted)}
+
+section.block{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:22px 24px;margin:0 0 18px}
+.sec-head h2{font-size:1.35rem;margin:2px 0 6px}
+.sec-head .sub{margin:0 0 12px;color:var(--muted);max-width:75ch}
+.who{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem;color:var(--muted);margin-bottom:8px}
+
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;padding:16px 0;border-top:1px solid var(--line)}
+.step .num{font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;padding-top:2px}
+.step h3{margin:0 0 8px;font-size:1.08rem}
+dl.facts{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:6px 14px;margin:0 0 10px}
+dl.facts dt{color:var(--muted);font-weight:600;font-size:.9rem}
+dl.facts dd{margin:0}
+ol.howto{margin:6px 0 10px;padding-left:1.4em}
+ol.howto li{margin:4px 0}
+.path{font-weight:600}
+ul.checks{list-style:none;margin:10px 0 0;padding:10px 12px;border-radius:var(--r);background:var(--sunken)}
+ul.checks li{margin:4px 0}
+ul.checks label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+ul.checks input{margin-top:5px;flex:none}
+
+.note{border:1px solid;border-radius:var(--r);padding:10px 14px;margin:12px 0}
+.note p{margin:4px 0}
+.note .nl{display:block;font-weight:700}
+.note.info{background:var(--accent-soft);border-color:var(--accent)}
+.note.ok{background:var(--ok-soft);border-color:var(--ok)}
+.note.warn{background:var(--warn-soft);border-color:var(--warn)}
+.note.danger{background:var(--danger-soft);border-color:var(--danger)}
+
+.code{border:1px solid var(--line);border-radius:var(--r);margin:10px 0;overflow:hidden}
+.code-bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 10px;background:var(--sunken);font-size:.82rem;color:var(--muted)}
+.code pre{margin:0;padding:10px 12px;background:var(--code-bg);color:var(--code-fg);font:13px/1.5 var(--f-mono);white-space:pre-wrap;overflow-wrap:anywhere}
+.copy{padding:3px 10px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);color:var(--fg);cursor:pointer;font-size:.8rem}
+.copy.done{border-color:var(--ok);color:var(--ok)}
+
+.tbl{overflow-x:auto;margin:8px 0}
+table{width:100%;border-collapse:collapse;font-size:.92rem}
+th,td{text-align:left;vertical-align:top;padding:7px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600}
+tr.phase-row td{background:var(--sunken);font-weight:600}
+tr.done td.task{color:var(--muted);text-decoration:line-through}
+.prog-tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px}
+.prog-total{font-weight:600}
+.toggle{display:inline-flex;gap:6px;align-items:center;font-size:.9rem;cursor:pointer}
+
+form.params .fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px 16px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-weight:600;font-size:.9rem}
+.field input{padding:7px 9px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg)}
+.field .hint{font-size:.8rem;color:var(--muted)}
+.field .err{font-size:.82rem;color:var(--danger)}
+
+.rules{margin:0;padding-left:1.3em}
+.rules li{margin:6px 0}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:.78rem;font-weight:600}
+.badge.ok{background:var(--ok-soft);color:var(--ok)}
+.badge.warn{background:var(--warn-soft);color:var(--warn)}
+.badge.danger{background:var(--danger-soft);color:var(--danger)}
+
+.gl-tools{margin-bottom:8px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.gl-tools input{flex:1;min-width:180px;padding:7px 9px;border:1px solid var(--line);border-radius:var(--r);background:var(--bg);color:var(--fg)}
+dl.glossary{margin:0}
+.gl-item{display:grid;grid-template-columns:minmax(120px,190px) minmax(0,1fr);gap:4px 14px;padding:7px 0;border-bottom:1px solid var(--line)}
+.gl-item dt{font-weight:600}
+.gl-item dd{margin:0}
+ol.sources li{margin:6px 0;overflow-wrap:anywhere}
+
+@media (max-width:860px){
+  .layout{display:block}
+  nav.toc{position:static;height:auto;padding:10px 16px;border-right:0;border-bottom:1px solid var(--line)}
+  nav.toc > div:first-child,nav.toc .toc-label{display:none}
+  nav.toc ol{display:flex;flex-wrap:wrap;gap:6px;margin:0}
+  nav.toc li a{padding:3px 9px;border:1px solid var(--line);border-radius:999px;font-size:.82rem}
+  main{padding:18px 16px 60px}
+  section.block{padding:16px}
+  h1{font-size:1.6rem}
+}
+@media (max-width:480px){
+  .step{grid-template-columns:1fr;gap:4px}
+  dl.facts{grid-template-columns:1fr;gap:2px}
+  dl.facts dd{margin-bottom:6px}
+  .gl-item{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="layout">
+
+<nav class="toc" aria-label="Contents · Índice">
+  <div><div class="toc-label"><span class="en">Language</span><span class="es">Idioma</span></div>
+    <div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" class="lang-btn" data-l="en" aria-pressed="true">EN</button><button type="button" class="lang-btn" data-l="es" aria-pressed="false">ES</button></div></div>
+  <div><div class="toc-label">Runbook</div>
+  <ol>
+    <li><a href="#progress"><span class="n"></span><span class="en">Progress</span><span class="es">Progreso</span></a></li>
+    <li><a href="#params"><span class="n"></span><span class="en">Your parameters</span><span class="es">Tus parámetros</span></a></li>
+    <li><a href="#rules"><span class="n"></span><span class="en">Golden rules</span><span class="es">Reglas de oro</span></a></li>
+    <li><a href="#phase0"><span class="n">0</span><span class="en">Server checks</span><span class="es">Comprobar el servidor</span></a></li>
+    <li><a href="#phase1"><span class="n">1</span><span class="en">First device</span><span class="es">Primer dispositivo</span></a></li>
+    <li><a href="#phase2"><span class="n">2</span><span class="en">Add the iPhone</span><span class="es">Añadir el iPhone</span></a></li>
+    <li><a href="#phase3"><span class="n">3</span><span class="en">Plugins to the phone</span><span class="es">Plugins al móvil</span></a></li>
+    <li><a href="#phase4"><span class="n">4</span><span class="en">Daily operation</span><span class="es">Uso diario</span></a></li>
+    <li><a href="#phase5"><span class="n">5</span><span class="en">Recovery</span><span class="es">Recuperación</span></a></li>
+    <li><a href="#glossary-sec"><span class="n"></span><span class="en">Glossary</span><span class="es">Glosario</span></a></li>
+    <li><a href="#sources"><span class="n"></span><span class="en">Sources</span><span class="es">Fuentes</span></a></li>
+  </ol></div>
+</nav>
+
+<main>
+
+<header class="top">
+  <div class="top-row">
+    <div class="eyebrow"><span class="en">Runbook · Obsidian core configuration</span><span class="es">Runbook · Configuración base de Obsidian</span></div>
+    <div class="top-tools"><button type="button" class="theme-btn" id="theme-btn" title="Theme · Tema"><span id="theme-label">Auto</span></button><div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" class="lang-btn" data-l="en" aria-pressed="true">EN</button><button type="button" class="lang-btn" data-l="es" aria-pressed="false">ES</button></div></div>
+  </div>
+  <h1><span class="en">Self-hosted LiveSync, step by step</span><span class="es">Self-hosted LiveSync, paso a paso</span></h1>
+  <p class="lede"><span class="en">Keep the vault in sync between the laptop and the iPhone through your own CouchDB server, end-to-end encrypted, with no third-party cloud. Set it up once, add devices safely, send only the plugins you choose to the phone, and know which buttons never to press.</span><span class="es">Mantén el vault sincronizado entre el portátil y el iPhone a través de tu propio servidor CouchDB, cifrado de extremo a extremo y sin nubes de terceros. Configúralo una vez, añade dispositivos con seguridad, manda al móvil solo los plugins que elijas y ten claro qué botones no pulsar nunca.</span></p>
+  <div class="meta"><span><span class="en">Devices</span><span class="es">Dispositivos</span>: <b data-k="laptop"></b> · <b data-k="phone"></b></span><span><span class="en">Server</span><span class="es">Servidor</span>: <b>CouchDB</b></span><span><span class="en">Based on the official Self-hosted LiveSync documentation</span><span class="es">Basado en la documentación oficial de Self-hosted LiveSync</span> · 2026-10</span></div>
+  <div class="phases">
+    <a class="phase-tile" href="#phase0"><span class="pn"><span class="en">Phase 0</span><span class="es">Fase 0</span></span><strong><span class="en">Server checks</span><span class="es">Comprobar el servidor</span></strong><span class="where">CouchDB</span></a>
+    <a class="phase-tile" href="#phase1"><span class="pn"><span class="en">Phase 1</span><span class="es">Fase 1</span></span><strong><span class="en">First device</span><span class="es">Primer dispositivo</span></strong><span class="where"><span class="en">Laptop</span><span class="es">Portátil</span></span></a>
+    <a class="phase-tile" href="#phase2"><span class="pn"><span class="en">Phase 2</span><span class="es">Fase 2</span></span><strong><span class="en">Add the iPhone</span><span class="es">Añadir el iPhone</span></strong><span class="where">Setup URI</span></a>
+    <a class="phase-tile" href="#phase3"><span class="pn"><span class="en">Phase 3</span><span class="es">Fase 3</span></span><strong><span class="en">Plugins to the phone</span><span class="es">Plugins al móvil</span></strong><span class="where">Hidden File Sync</span></a>
+    <a class="phase-tile" href="#phase4"><span class="pn"><span class="en">Phase 4</span><span class="es">Fase 4</span></span><strong><span class="en">Daily operation</span><span class="es">Uso diario</span></strong><span class="where"><span class="en">Status, mismatches</span><span class="es">Estado, discrepancias</span></span></a>
+    <a class="phase-tile" href="#phase5"><span class="pn"><span class="en">Phase 5</span><span class="es">Fase 5</span></span><strong><span class="en">Recovery</span><span class="es">Recuperación</span></strong><span class="where"><span class="en">Only with a backup</span><span class="es">Solo con copia</span></span></a>
+  </div>
+</header>
+
+<div class="note warn" id="storage-note" hidden><span class="nl"><span class="en">Progress is not saved here</span><span class="es">El progreso no se guarda aquí</span></span><p><span class="en">This page is isolated, so it cannot store anything: ticks and parameters are lost when you close it. To keep them, trust this file <b>on your computer</b> (shield button): it only stores them in that browser and gets no access to your vault there. Do not trust it on the phone; it does not need it.</span><span class="es">Esta página está aislada y no puede guardar nada: las casillas y los parámetros se pierden al cerrarla. Para conservarlos, confía en este archivo <b>en tu ordenador</b> (botón del escudo): solo los guarda en ese navegador y allí no obtiene acceso a tu vault. No confíes en él en el móvil; no lo necesita.</span></p></div>
+
+<!-- ============ PROGRESS ============ -->
+<section class="block" id="progress">
+  <div class="sec-head">
+    <h2><span class="en">Progress</span><span class="es">Progreso</span></h2>
+    <p class="sub"><span class="en">Every check of the runbook in one table. Ticking here or in the step is the same.</span><span class="es">Todas las comprobaciones del runbook en una tabla. Marcar aquí o en el paso es lo mismo.</span></p>
+  </div>
+  <div class="prog-tools">
+    <div class="prog-total" id="prog-total"></div>
+    <label class="toggle"><input type="checkbox" id="only-pending"><span class="en">Pending only</span><span class="es">Solo pendientes</span></label>
+  </div>
+  <div class="tbl"><table id="progress-table">
+    <thead><tr><th><span class="en">Done</span><span class="es">Hecho</span></th><th><span class="en">Step</span><span class="es">Paso</span></th><th><span class="en">Check</span><span class="es">Comprobación</span></th><th><span class="en">Device</span><span class="es">Dispositivo</span></th></tr></thead>
+    <tbody id="progress-rows"></tbody>
+  </table></div>
+</section>
+
+<!-- ============ PARAMETERS ============ -->
+<section class="block" id="params">
+  <div class="sec-head">
+    <h2><span class="en">Your parameters</span><span class="es">Tus parámetros</span></h2>
+    <p class="sub"><span class="en">Fill these in and the page writes them into the steps and builds the Hidden File Sync patterns. Never type passwords or the passphrase here.</span><span class="es">Rellénalos y la página los escribe en los pasos y genera los patrones del Hidden File Sync. Nunca escribas aquí contraseñas ni la passphrase.</span></p>
+  </div>
+  <form class="params" id="params-form" autocomplete="off">
+    <div class="fields">
+      <div class="field">
+        <label for="p-url"><span class="en">Server URL</span><span class="es">URL del servidor</span></label>
+        <input type="text" id="p-url" class="mono" spellcheck="false" placeholder="https://couchdb.example.org">
+        <span class="hint"><span class="en">The HTTPS address of your CouchDB.</span><span class="es">La dirección HTTPS de tu CouchDB.</span></span>
+      </div>
+      <div class="field">
+        <label for="p-db"><span class="en">Database name</span><span class="es">Nombre de la base de datos</span></label>
+        <input type="text" id="p-db" class="mono" spellcheck="false" placeholder="obsidian">
+      </div>
+      <div class="field">
+        <label for="p-user"><span class="en">CouchDB username</span><span class="es">Usuario de CouchDB</span></label>
+        <input type="text" id="p-user" class="mono" spellcheck="false" placeholder="obsidian-user">
+        <span class="hint"><span class="en">Only the name. The password lives in your password manager.</span><span class="es">Solo el nombre. La contraseña vive en tu gestor de contraseñas.</span></span>
+      </div>
+      <div class="field">
+        <label for="p-laptop"><span class="en">Laptop device name</span><span class="es">Nombre del portátil</span></label>
+        <input type="text" id="p-laptop" class="mono" spellcheck="false" placeholder="laptop">
+      </div>
+      <div class="field">
+        <label for="p-phone"><span class="en">iPhone device name</span><span class="es">Nombre del iPhone</span></label>
+        <input type="text" id="p-phone" class="mono" spellcheck="false" placeholder="iphone">
+        <span class="hint"><span class="en">Must differ from the laptop's.</span><span class="es">Debe ser distinto del del portátil.</span></span>
+        <span class="err" id="p-names-err" hidden></span>
+      </div>
+      <div class="field">
+        <label for="p-plugins"><span class="en">Plugins to send to the phone</span><span class="es">Plugins que van al móvil</span></label>
+        <input type="text" id="p-plugins" class="mono" spellcheck="false" value="html-prototype-viewer-strict">
+        <span class="hint"><span class="en">Plugin folder names (ids), separated by commas.</span><span class="es">Nombres de carpeta (ids) de los plugins, separados por comas.</span></span>
+        <span class="err" id="p-plugins-err" hidden></span>
+      </div>
+    </div>
+  </form>
+</section>
+
+<!-- ============ GOLDEN RULES ============ -->
+<section class="block" id="rules">
+  <div class="sec-head">
+    <h2><span class="en">Golden rules</span><span class="es">Reglas de oro</span></h2>
+    <p class="sub"><span class="en">Read them once; they apply to every phase.</span><span class="es">Léelas una vez; valen para todas las fases.</span></p>
+  </div>
+  <ol class="rules">
+    <li><span class="en"><b>Your server only.</b> No Obsidian Sync and no third-party clouds: the notes are private and critical.</span><span class="es"><b>Solo tu servidor.</b> Nada de Obsidian Sync ni nubes de terceros: las notas son privadas y críticas.</span></li>
+    <li><span class="en"><b>Back up before anything risky.</b> Copy the whole vault folder elsewhere (Phase 5 explains how) before changing encryption, running any recovery action or enabling a new kind of sync.</span><span class="es"><b>Copia antes de cualquier cosa arriesgada.</b> Copia la carpeta entera del vault a otro sitio (la fase 5 explica cómo) antes de tocar el cifrado, lanzar cualquier acción de recuperación o activar un tipo nuevo de sincronización.</span></li>
+    <li><span class="en"><b>Never press without a backup and a reason:</b> <i>Rebuild</i>, a <i>Fetch</i> of the whole database, <i>Overwrite Server Data with This Device's Files</i>, <i>Delete all customisation sync data</i>. They can discard changes that exist only on another device.</span><span class="es"><b>Nunca pulses sin copia y sin motivo:</b> <i>Rebuild</i>, un <i>Fetch</i> de toda la base de datos, <i>Overwrite Server Data with This Device's Files</i>, <i>Delete all customisation sync data</i>. Pueden descartar cambios que solo existen en otro dispositivo.</span></li>
+    <li><span class="en"><b>Same LiveSync version everywhere.</b> Update every device before accepting any settings change.</span><span class="es"><b>La misma versión de LiveSync en todos.</b> Actualiza todos los dispositivos antes de aceptar cualquier cambio de ajustes.</span></li>
+    <li><span class="en"><b>The passphrase is unrecoverable.</b> Keep it in your password manager; it must be identical on every device. Lose it and the encrypted data on the server cannot be read.</span><span class="es"><b>La passphrase no se recupera.</b> Guárdala en tu gestor de contraseñas; debe ser idéntica en todos los dispositivos. Si la pierdes, los datos cifrados del servidor no se pueden leer.</span></li>
+    <li><span class="en"><b>One owner per file.</b> Never manage the same files with both <i>Hidden File Sync</i> and <i>Customisation Sync</i>.</span><span class="es"><b>Un solo responsable por archivo.</b> No gestiones nunca los mismos archivos con <i>Hidden File Sync</i> y con <i>Customisation Sync</i> a la vez.</span></li>
+    <li><span class="en"><b>Only the menus you need.</b> In <i>Extra menus</i>, turn on <i>Enable advanced features</i> only; leave the poweruser and edge case menus off.</span><span class="es"><b>Solo los menús necesarios.</b> En <i>Extra menus</i>, activa solo <i>Enable advanced features</i>; deja apagados los de poweruser y edge case.</span></li>
+    <li><span class="en"><b>When in doubt, stop.</b> A paused sync loses nothing. Take a screenshot of the dialog before choosing.</span><span class="es"><b>Ante la duda, para.</b> Una sincronización en pausa no pierde nada. Haz una captura del diálogo antes de elegir.</span></li>
+  </ol>
+</section>
+
+<!-- ============ PHASE 0 ============ -->
+<section class="block" id="phase0">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 0</span><span class="es">Fase 0</span></div>
+    <h2><span class="en">Server checks</span><span class="es">Comprobar el servidor</span></h2>
+    <p class="sub"><span class="en">Your CouchDB already runs; this phase only confirms what the devices need from it. Nothing here changes the server.</span><span class="es">Tu CouchDB ya funciona; esta fase solo confirma lo que los dispositivos necesitan de él. Aquí nada cambia el servidor.</span></p>
+    <div class="who"><span><span class="en">Where</span><span class="es">Dónde</span>: <b data-k="laptop"></b> · <span class="en">server</span><span class="es">servidor</span> <code data-k="url"></code></span></div>
+  </div>
+  <div class="note info"><span class="nl"><span class="en">Already syncing?</span><span class="es">¿Ya sincronizas?</span></span><p><span class="en">If the laptop and the iPhone already sync, skip Phases 1 and 2: go to Phase 3 to send plugins to the phone, and keep Phases 4 and 5 at hand.</span><span class="es">Si el portátil y el iPhone ya sincronizan, sáltate las fases 1 y 2: ve a la fase 3 para mandar plugins al móvil y ten a mano las fases 4 y 5.</span></p></div>
+
+  <div class="step" id="p0-1"><div class="num">0.1</div><div class="body">
+    <h3><span class="en">HTTPS with a valid certificate</span><span class="es">HTTPS con un certificado válido</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">The server URL starts with <code>https://</code>, and opening it in the laptop's browser shows no certificate warning.</span><span class="es">La URL del servidor empieza por <code>https://</code> y, al abrirla en el navegador del portátil, no sale ningún aviso de certificado.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">Obsidian on the iPhone requires HTTPS with a valid certificate. The LiveSync guide recommends a reverse proxy on your own domain, with CouchDB not mounted on a subdirectory.</span><span class="es">Obsidian en el iPhone exige HTTPS con un certificado válido. La guía de LiveSync recomienda un proxy inverso en tu propio dominio, sin montar CouchDB en un subdirectorio.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p0-https"></ul>
+  </div></div>
+
+  <div class="step" id="p0-2"><div class="num">0.2</div><div class="body">
+    <h3><span class="en">CORS allows Obsidian</span><span class="es">CORS admite a Obsidian</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Whoever runs the server confirms that CouchDB's <code>[cors]</code> section has, at least, these values (from the LiveSync server guide). If a reverse proxy adds its own CORS headers, it must allow the same.</span><span class="es">Quien administra el servidor confirma que la sección <code>[cors]</code> de CouchDB tiene, como mínimo, estos valores (de la guía de servidor de LiveSync). Si un proxy inverso añade sus propias cabeceras CORS, debe permitir lo mismo.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en"><code>app://obsidian.md</code> is Obsidian on the desktop and <code>capacitor://localhost</code> is Obsidian on the iPhone. Without them the server rejects the app.</span><span class="es"><code>app://obsidian.md</code> es Obsidian en el ordenador y <code>capacitor://localhost</code> es Obsidian en el iPhone. Sin ellos el servidor rechaza la app.</span></dd>
+    </dl>
+    <div class="code"><div class="code-bar"><span>CouchDB · [cors]</span><button class="copy" type="button">Copy</button></div><pre>[cors]
+credentials = true
+origins = app://obsidian.md,capacitor://localhost,http://localhost
+headers = accept, authorization, content-type, origin, referer</pre></div>
+    <div class="note info"><span class="nl"><span class="en">Large notes or attachments fail with 413?</span><span class="es">¿Notas o adjuntos grandes fallan con 413?</span></span><p><span class="en">With Nginx in front, the guide's fixes are: raise <code>client_max_body_size</code>, turn <code>proxy_buffering</code> off if transfers stall, and serve CouchDB at the root location to avoid «Database not found».</span><span class="es">Con Nginx delante, las correcciones de la guía son: subir <code>client_max_body_size</code>, desactivar <code>proxy_buffering</code> si las transferencias se atascan, y servir CouchDB en la raíz para evitar «Database not found».</span></p></div>
+    <ul class="checks" data-group="p0-cors"></ul>
+  </div></div>
+
+  <div class="step" id="p0-3"><div class="num">0.3</div><div class="body">
+    <h3><span class="en">The account the devices use</span><span class="es">La cuenta que usan los dispositivos</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Know which CouchDB account the devices use (<code data-k="user"></code>) and keep its password in your password manager. LiveSync's setup tools do not create a separate non-administrator account; if you use the administrator, remember that its password travels, encrypted, inside every Setup URI.</span><span class="es">Ten claro qué cuenta de CouchDB usan los dispositivos (<code data-k="user"></code>) y guarda su contraseña en tu gestor de contraseñas. Las herramientas de instalación de LiveSync no crean una cuenta aparte sin privilegios de administrador; si usas la del administrador, recuerda que su contraseña viaja, cifrada, dentro de cada Setup URI.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p0-user"></ul>
+  </div></div>
+</section>
+
+<!-- ============ PHASE 1 ============ -->
+<section class="block" id="phase1">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 1</span><span class="es">Fase 1</span></div>
+    <h2><span class="en">First device: the laptop</span><span class="es">Primer dispositivo: el portátil</span></h2>
+    <p class="sub"><span class="en">Creates the synchronised vault on the server from this device. The labels are those of LiveSync's onboarding.</span><span class="es">Crea en el servidor el vault sincronizado a partir de este dispositivo. Las etiquetas son las del asistente de LiveSync (en inglés).</span></p>
+    <div class="who"><span><span class="en">Where</span><span class="es">Dónde</span>: <b data-k="laptop"></b></span></div>
+  </div>
+  <div class="note danger"><span class="nl"><span class="en">Only for a new database</span><span class="es">Solo para una base de datos nueva</span></span><p><span class="en">This phase overwrites the remote database. Use it only when the database is new, or when this device is deliberately the source of truth for a full rebuild. If your notes are already on the server, add the device with Phase 2 instead.</span><span class="es">Esta fase sobrescribe la base de datos remota. Úsala solo si la base es nueva, o si este dispositivo es a propósito la fuente de verdad para reconstruirla entera. Si tus notas ya están en el servidor, añade el dispositivo con la fase 2.</span></p></div>
+
+  <div class="step" id="p1-1"><div class="num">1.1</div><div class="body">
+    <h3><span class="en">Before you start</span><span class="es">Antes de empezar</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Back up the vault (Phase 5). Make sure nothing else writes to this vault: no Obsidian Sync, no iCloud, no other sync service. Have three secrets ready in your password manager: the CouchDB password, a new strong <b>vault encryption passphrase</b> and, later, a different <b>Setup URI passphrase</b>.</span><span class="es">Haz copia del vault (fase 5). Asegúrate de que nada más escribe en este vault: ni Obsidian Sync, ni iCloud, ni otro servicio de sincronización. Ten tres secretos en tu gestor de contraseñas: la contraseña de CouchDB, una <b>passphrase de cifrado del vault</b> nueva y robusta y, más adelante, una <b>passphrase del Setup URI</b> distinta.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">Two sync systems on one vault fight over the same files. The two passphrases protect different things: the vault passphrase encrypts your notes; the Setup URI passphrase only unlocks a Setup URI.</span><span class="es">Dos sistemas de sincronización en un vault se pelean por los mismos archivos. Las dos passphrases protegen cosas distintas: la del vault cifra tus notas; la del Setup URI solo abre un Setup URI.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p1-before"></ul>
+  </div></div>
+
+  <div class="step" id="p1-2"><div class="num">1.2</div><div class="body">
+    <h3><span class="en">Install and open the onboarding</span><span class="es">Instalar y abrir el asistente</span></h3>
+    <ol class="howto">
+      <li><span class="en">Obsidian → <b>Settings → Community plugins → Browse</b>, search <b>Self-hosted LiveSync</b>, <b>Install</b>, then <b>Enable</b>.</span><span class="es">Obsidian → <b>Ajustes → Complementos comunitarios → Explorar</b>, busca <b>Self-hosted LiveSync</b>, <b>Instalar</b> y después <b>Activar</b>.</span></li>
+      <li><span class="en">Select the notice <b>Welcome to Self-hosted LiveSync</b>.</span><span class="es">Pulsa el aviso <b>Welcome to Self-hosted LiveSync</b>.</span></li>
+      <li><span class="en">Choose <b>I am setting this up for the first time</b> and confirm.</span><span class="es">Elige <b>I am setting this up for the first time</b> y confirma.</span></li>
+      <li><span class="en">On <b>Connection Method</b>, choose <b>Configure a remote manually</b>, then <b>Proceed with manual configuration</b>.</span><span class="es">En <b>Connection Method</b>, elige <b>Configure a remote manually</b> y después <b>Proceed with manual configuration</b>.</span></li>
+    </ol>
+    <div class="note info"><span class="nl"><span class="en">Have a Setup URI from the server setup?</span><span class="es">¿Tienes un Setup URI de la instalación del servidor?</span></span><p><span class="en">Choose <b>Use a Setup URI (Recommended)</b> instead, paste it, type its passphrase, select <b>Test Settings and Continue</b> and go on at step 1.5.</span><span class="es">Elige en su lugar <b>Use a Setup URI (Recommended)</b>, pégalo, escribe su passphrase, pulsa <b>Test Settings and Continue</b> y sigue en el paso 1.5.</span></p></div>
+    <ul class="checks" data-group="p1-install"></ul>
+  </div></div>
+
+  <div class="step" id="p1-3"><div class="num">1.3</div><div class="body">
+    <h3><span class="en">End-to-end encryption</span><span class="es">Cifrado de extremo a extremo</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Turn on <b>End-to-End Encryption</b> and type the vault encryption passphrase from your password manager. Turn on <b>Obfuscate Properties</b> too.</span><span class="es">Activa <b>End-to-End Encryption</b> y escribe la passphrase de cifrado del vault desde tu gestor de contraseñas. Activa también <b>Obfuscate Properties</b>.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">The server only ever stores encrypted notes. <i>Obfuscate Properties</i> also conceals the documents' properties on the server.</span><span class="es">El servidor solo guarda notas cifradas. <i>Obfuscate Properties</i> oculta también en el servidor las propiedades de los documentos.</span></dd>
+    </dl>
+    <div class="note danger"><span class="nl"><span class="en">No passphrase, no notes</span><span class="es">Sin passphrase no hay notas</span></span><p><span class="en">Nobody can recover a lost vault passphrase. Every device must use exactly the same one.</span><span class="es">Nadie puede recuperar una passphrase del vault perdida. Todos los dispositivos deben usar exactamente la misma.</span></p></div>
+    <ul class="checks" data-group="p1-e2ee"></ul>
+  </div></div>
+
+  <div class="step" id="p1-4"><div class="num">1.4</div><div class="body">
+    <h3><span class="en">Connect to your CouchDB</span><span class="es">Conectar con tu CouchDB</span></h3>
+    <ol class="howto">
+      <li><span class="en">In <b>Choose a synchronisation remote</b>, choose <b>CouchDB</b>, then <b>Continue to CouchDB setup</b>.</span><span class="es">En <b>Choose a synchronisation remote</b>, elige <b>CouchDB</b> y después <b>Continue to CouchDB setup</b>.</span></li>
+      <li><span class="en">Fill in the URL <code data-k="url"></code>, the username <code data-k="user"></code>, the password (from your password manager) and the database name <code data-k="db"></code>.</span><span class="es">Rellena la URL <code data-k="url"></code>, el usuario <code data-k="user"></code>, la contraseña (desde tu gestor de contraseñas) y la base de datos <code data-k="db"></code>.</span></li>
+      <li><span class="en">Optional: <b>Check server requirements</b>. The first check only reads; some checks need the CouchDB administrator. Confirm any server change it offers one by one, only if you understand it.</span><span class="es">Opcional: <b>Check server requirements</b>. La primera comprobación solo lee; algunas necesitan el administrador de CouchDB. Confirma una a una las correcciones que ofrezca, solo si las entiendes.</span></li>
+      <li><span class="en">Select <b>Create or connect to database and continue</b>. It must succeed before you can go on.</span><span class="es">Pulsa <b>Create or connect to database and continue</b>. Tiene que salir bien para poder seguir.</span></li>
+    </ol>
+    <div class="note warn"><span class="nl">HTTPS</span><p><span class="en">The iPhone needs <code>https://</code> with a valid certificate. Plain HTTP is only acceptable from a desktop on a trusted local network.</span><span class="es">El iPhone necesita <code>https://</code> con un certificado válido. HTTP sin cifrar solo vale desde un ordenador en una red local de confianza.</span></p></div>
+    <ul class="checks" data-group="p1-remote"></ul>
+  </div></div>
+
+  <div class="step" id="p1-5"><div class="num">1.5</div><div class="body">
+    <h3><span class="en">Initialise the server</span><span class="es">Inicializar el servidor</span></h3>
+    <ol class="howto">
+      <li><span class="en">Review <b>Setup Complete: Preparing to Initialise Server</b>, then select <b>Restart and Initialise Server</b>.</span><span class="es">Revisa <b>Setup Complete: Preparing to Initialise Server</b> y pulsa <b>Restart and Initialise Server</b>.</span></li>
+      <li><span class="en">Read the final warning. Select <b>I Understand, Overwrite Server</b> only if the database is new (or meant to be replaced) and your backup exists.</span><span class="es">Lee el aviso final. Pulsa <b>I Understand, Overwrite Server</b> solo si la base es nueva (o debe sustituirse) y tienes la copia.</span></li>
+      <li><span class="en">On <b>No Synchronisation Settings Found</b>, select <b>Use this device's settings</b>. If you expected existing settings, cancel and check the database name. If you see <b>Could Not Read Synchronisation Settings</b>, retry.</span><span class="es">En <b>No Synchronisation Settings Found</b>, pulsa <b>Use this device's settings</b>. Si esperabas ajustes existentes, cancela y revisa el nombre de la base. Si ves <b>Could Not Read Synchronisation Settings</b>, reintenta.</span></li>
+      <li><span class="en">Acknowledge <b>All optional features are disabled</b>. Keep Obsidian open until LiveSync's progress indicators clear.</span><span class="es">Acepta <b>All optional features are disabled</b>. Deja Obsidian abierto hasta que desaparezcan los indicadores de progreso de LiveSync.</span></li>
+    </ol>
+    <ul class="checks" data-group="p1-init"></ul>
+  </div></div>
+
+  <div class="step" id="p1-6"><div class="num">1.6</div><div class="body">
+    <h3><span class="en">Prove it works</span><span class="es">Comprobar que funciona</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Create a note called <code>LiveSync test</code> with one line of text. The status bar goes ⚡️ and back to 💤. Then open <b>Settings → Self-hosted LiveSync → Privacy &amp; Encryption</b> and check that end-to-end encryption is on.</span><span class="es">Crea una nota llamada <code>LiveSync test</code> con una línea de texto. La barra de estado pasa a ⚡️ y vuelve a 💤. Después abre <b>Ajustes → Self-hosted LiveSync → Privacy &amp; Encryption</b> y comprueba que el cifrado de extremo a extremo está activo.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p1-test"></ul>
+  </div></div>
+</section>
+
+<!-- ============ PHASE 2 ============ -->
+<section class="block" id="phase2">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 2</span><span class="es">Fase 2</span></div>
+    <h2><span class="en">Add the iPhone</span><span class="es">Añadir el iPhone</span></h2>
+    <p class="sub"><span class="en">The laptop, already working, produces a Setup URI with its real settings; the iPhone joins with it and fetches the notes. No credentials typed on the phone.</span><span class="es">El portátil, que ya funciona, genera un Setup URI con sus ajustes reales; el iPhone se une con él y descarga las notas. Sin escribir credenciales en el móvil.</span></p>
+    <div class="who"><span><span class="en">Where</span><span class="es">Dónde</span>: <b data-k="laptop"></b> → <b data-k="phone"></b></span></div>
+  </div>
+
+  <div class="step" id="p2-1"><div class="num">2.1</div><div class="body">
+    <h3><span class="en">Create a Setup URI on the laptop</span><span class="es">Crear un Setup URI en el portátil</span></h3>
+    <ol class="howto">
+      <li><span class="en">Command palette (<b>Cmd+P</b>) → <b>Self-hosted LiveSync: Copy settings as a new Setup URI</b>.</span><span class="es">Paleta de comandos (<b>Cmd+P</b>) → <b>Self-hosted LiveSync: Copy settings as a new Setup URI</b>.</span></li>
+      <li><span class="en">Type a new Setup URI passphrase (not the vault passphrase), store it in your password manager and select <b>OK</b>.</span><span class="es">Escribe una passphrase nueva para el Setup URI (no la del vault), guárdala en tu gestor de contraseñas y pulsa <b>OK</b>.</span></li>
+      <li><span class="en">Copy the resulting Setup URI, then select <b>OK</b>. It starts with <code>obsidian://setuplivesync?settings=</code>.</span><span class="es">Copia el Setup URI resultante y pulsa <b>OK</b>. Empieza por <code>obsidian://setuplivesync?settings=</code>.</span></li>
+    </ol>
+    <div class="note warn"><span class="nl"><span class="en">Treat it as a secret</span><span class="es">Trátalo como un secreto</span></span><p><span class="en">The Setup URI is encrypted, but it contains the server credentials and the vault settings. Send it and its passphrase through different channels, never by chat, e-mail or a cloud note: for example, the URI in a text file by AirDrop and the passphrase from your password manager. Delete every copy once the iPhone is set up.</span><span class="es">El Setup URI va cifrado, pero contiene las credenciales del servidor y los ajustes del vault. Envíalo a él y a su passphrase por canales distintos, nunca por chat, correo ni nota en la nube: por ejemplo, el URI en un archivo de texto por AirDrop y la passphrase desde tu gestor de contraseñas. Borra todas las copias cuando el iPhone esté configurado.</span></p></div>
+    <ul class="checks" data-group="p2-uri"></ul>
+  </div></div>
+
+  <div class="step" id="p2-2"><div class="num">2.2</div><div class="body">
+    <h3><span class="en">Prepare the iPhone</span><span class="es">Preparar el iPhone</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Create a new, empty vault stored on the iPhone, not in iCloud. Then <b>Settings → Community plugins</b>: turn off <i>Restricted mode</i>, <b>Browse</b>, install and enable <b>Self-hosted LiveSync</b>.</span><span class="es">Crea un vault nuevo y vacío guardado en el iPhone, no en iCloud. Después <b>Ajustes → Complementos comunitarios</b>: desactiva el <i>modo restringido</i>, <b>Explorar</b>, instala y activa <b>Self-hosted LiveSync</b>.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">An empty vault has nothing to lose or to merge. A vault in iCloud would have a second sync writing to it.</span><span class="es">Un vault vacío no tiene nada que perder ni que fusionar. Un vault en iCloud tendría una segunda sincronización escribiendo en él.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p2-prep"></ul>
+  </div></div>
+
+  <div class="step" id="p2-3"><div class="num">2.3</div><div class="body">
+    <h3><span class="en">Join with the Setup URI</span><span class="es">Unirse con el Setup URI</span></h3>
+    <ol class="howto">
+      <li><span class="en">Select the notice <b>Welcome to Self-hosted LiveSync</b>.</span><span class="es">Pulsa el aviso <b>Welcome to Self-hosted LiveSync</b>.</span></li>
+      <li><span class="en">Choose <b>I am adding a device to an existing synchronisation setup</b> and confirm.</span><span class="es">Elige <b>I am adding a device to an existing synchronisation setup</b> y confirma.</span></li>
+      <li><span class="en">On <b>Device Setup Method</b>, choose <b>Use a Setup URI (Recommended)</b>. Paste the URI, type its passphrase and select <b>Test Settings and Continue</b>.</span><span class="es">En <b>Device Setup Method</b>, elige <b>Use a Setup URI (Recommended)</b>. Pega el URI, escribe su passphrase y pulsa <b>Test Settings and Continue</b>.</span></li>
+      <li><span class="en">Review <b>Setup Complete: Preparing to Fetch Synchronisation Data</b>, then <b>Restart and Fetch Data</b>.</span><span class="es">Revisa <b>Setup Complete: Preparing to Fetch Synchronisation Data</b> y pulsa <b>Restart and Fetch Data</b>.</span></li>
+      <li><span class="en">The vault is empty: choose <b>Overwrite all with remote files</b>. If asked about extra local files, choose <b>Keep local files even if not on remote</b>.</span><span class="es">El vault está vacío: elige <b>Overwrite all with remote files</b>. Si pregunta por archivos locales de más, elige <b>Keep local files even if not on remote</b>.</span></li>
+      <li><span class="en">Keep Obsidian open and in front until the progress indicators clear. The first fetch of a large vault takes a while.</span><span class="es">Deja Obsidian abierto y en primer plano hasta que desaparezcan los indicadores de progreso. La primera descarga de un vault grande tarda.</span></li>
+    </ol>
+    <div class="note warn"><span class="nl"><span class="en">A vault that already has notes?</span><span class="es">¿Un vault que ya tiene notas?</span></span><p><span class="en">Stop. Back it up and read LiveSync's Fast Setup guide (Sources) before choosing how to fetch.</span><span class="es">Para. Haz copia y lee la guía Fast Setup de LiveSync (Fuentes) antes de elegir cómo descargar.</span></p></div>
+    <ul class="checks" data-group="p2-join"></ul>
+  </div></div>
+
+  <div class="step" id="p2-4"><div class="num">2.4</div><div class="body">
+    <h3><span class="en">Prove it works both ways</span><span class="es">Comprobar que funciona en los dos sentidos</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">The note <code>LiveSync test</code> appears on the iPhone unchanged. Edit it on the iPhone; the change reaches the laptop. Delete the Setup URI copies.</span><span class="es">La nota <code>LiveSync test</code> aparece en el iPhone sin cambios. Edítala en el iPhone; el cambio llega al portátil. Borra las copias del Setup URI.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p2-test"></ul>
+  </div></div>
+</section>
+
+<!-- ============ PHASE 3 ============ -->
+<section class="block" id="phase3">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 3</span><span class="es">Fase 3</span></div>
+    <h2><span class="en">Plugins to the phone</span><span class="es">Plugins al móvil</span></h2>
+    <p class="sub"><span class="en">The phone's file browser cannot see the hidden <code>.obsidian</code> folder, so plugins reach the iPhone through the sync. <i>Hidden File Sync</i>, limited by patterns, sends only the folders of the plugins you chose.</span><span class="es">El explorador de archivos del móvil no ve la carpeta oculta <code>.obsidian</code>, así que los plugins llegan al iPhone con la sincronización. El <i>Hidden File Sync</i>, limitado con patrones, envía solo las carpetas de los plugins que elegiste.</span></p>
+    <div class="who"><span><span class="en">Where</span><span class="es">Dónde</span>: <b data-k="laptop"></b> → <b data-k="phone"></b></span></div>
+  </div>
+
+  <div class="step" id="p3-1"><div class="num">3.1</div><div class="body">
+    <h3><span class="en">Show the advanced settings</span><span class="es">Mostrar los ajustes avanzados</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="path">Self-hosted LiveSync → General Settings → Extra menus</span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Turn on <b>Enable advanced features</b> on <b>both</b> devices. Leave <i>Enable poweruser features</i> and <i>Enable edge case treatment features</i> off.</span><span class="es">Activa <b>Enable advanced features</b> en los <b>dos</b> dispositivos. Deja apagados <i>Enable poweruser features</i> y <i>Enable edge case treatment features</i>.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">It shows the <i>Selector</i> and the <i>Hidden Files</i> sections. It changes nothing in how sync works.</span><span class="es">Muestra las secciones <i>Selector</i> y <i>Hidden Files</i>. No cambia nada de cómo sincroniza.</span></dd>
+    </dl>
+    <ul class="checks" data-group="adv"></ul>
+  </div></div>
+
+  <div class="step" id="p3-2"><div class="num">3.2</div><div class="body">
+    <h3><span class="en">Limit Hidden File Sync to your plugins</span><span class="es">Limitar el Hidden File Sync a tus plugins</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="path">Self-hosted LiveSync → Selector → Hidden Files</span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Add the two patterns below, built from your parameters, on <b>both</b> devices.</span><span class="es">Añade los dos patrones de abajo, generados con tus parámetros, en los <b>dos</b> dispositivos.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">Only the files of these plugins travel. Their <code>data.json</code> (settings and, for HTML Prototype Viewer (Strict), the device's own trust list) stays on each device. Other plugins, your workspace and LiveSync's own data stay out. Target patterns also decide which folders are walked, so each parent folder must match too, as these do.</span><span class="es">Solo viajan los archivos de estos plugins. Su <code>data.json</code> (ajustes y, en HTML Prototype Viewer (Strict), la lista de confianza propia del dispositivo) se queda en cada dispositivo. Los demás plugins, tu espacio de trabajo y los datos del propio LiveSync quedan fuera. Los Target patterns deciden también qué carpetas se recorren, así que cada carpeta padre debe coincidir, como en estos.</span></dd>
+    </dl>
+    <div class="code"><div class="code-bar"><span>Target patterns</span><button class="copy" type="button">Copy</button></div><pre data-gen="target"></pre></div>
+    <div class="code"><div class="code-bar"><span>Ignore patterns</span><button class="copy" type="button">Copy</button></div><pre data-gen="ignore"></pre></div>
+    <ul class="checks" data-group="patterns"></ul>
+  </div></div>
+
+  <div class="step" id="p3-3"><div class="num">3.3</div><div class="body">
+    <h3><span class="en">Turn it on: the laptop sends, the phone receives</span><span class="es">Activarlo: el portátil envía, el móvil recibe</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="path">Self-hosted LiveSync → Sync Settings → Hidden Files → Enable Hidden File Sync</span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">First on the laptop, choosing <b>Overwrite</b> (this device is the source). Then on the iPhone, choosing <b>Fetch</b> (the server is the source). Keep Obsidian open until the progress notice ends; restart it when the notice says so.</span><span class="es">Primero en el portátil, eligiendo <b>Overwrite</b> (este dispositivo manda). Después en el iPhone, eligiendo <b>Fetch</b> (manda el servidor). Deja Obsidian abierto hasta que acabe el aviso de progreso; reinícialo cuando el aviso lo diga.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en"><i>Merge</i> compares both sides without an authority and may leave conflicts to review. With a narrow pattern, one source of truth is simpler.</span><span class="es"><i>Merge</i> compara los dos lados sin que mande ninguno y puede dejar conflictos que revisar. Con un patrón estrecho, una sola fuente de verdad es más sencillo.</span></dd>
+    </dl>
+    <div class="note warn"><span class="nl"><span class="en">Back up the phone's vault first</span><span class="es">Antes, copia del vault del móvil</span></span><p><span class="en"><i>Fetch</i> replaces local hidden files that match the patterns. With these patterns that is only the chosen plugins' files.</span><span class="es"><i>Fetch</i> sustituye los archivos ocultos locales que coinciden con los patrones. Con estos patrones son solo los archivos de los plugins elegidos.</span></p></div>
+    <ul class="checks" data-group="hfs"></ul>
+  </div></div>
+
+  <div class="step" id="p3-4"><div class="num">3.4</div><div class="body">
+    <h3><span class="en">Enable the plugins on the phone</span><span class="es">Activar los plugins en el móvil</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="path"><span class="en">Obsidian → Settings → Community plugins</span><span class="es">Obsidian → Ajustes → Complementos comunitarios</span></span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">If <i>Restricted mode</i> is on, turn it off. Enable each plugin that arrived. For HTML Prototype Viewer (Strict), disable the original HTML Prototype Viewer.</span><span class="es">Si está el <i>modo restringido</i>, desactívalo. Activa cada plugin que llegó. Para HTML Prototype Viewer (Strict), desactiva el HTML Prototype Viewer original.</span></dd>
+      <dt><span class="en">Why</span><span class="es">Por qué</span></dt><dd><span class="en">The list of enabled plugins does not travel on purpose: each device decides what runs.</span><span class="es">La lista de plugins activos no viaja a propósito: cada dispositivo decide qué se ejecuta.</span></dd>
+    </dl>
+    <div class="note info"><span class="nl">HTML Prototype Viewer (Strict)</span><p><span class="en">On the phone, an HTML file can only be trusted if the laptop already trusted the same content; the laptop's approvals travel in <code>approvals.json</code> inside the plugin folder, which these patterns include. Trust on the phone gives that file full access to the vault: do it only for files you checked on the laptop.</span><span class="es">En el móvil, un HTML solo se puede marcar de confianza si el portátil ya confió en el mismo contenido; las aprobaciones del portátil viajan en <code>approvals.json</code> dentro de la carpeta del plugin, que estos patrones incluyen. Confiar en el móvil da a ese archivo acceso completo al vault: hazlo solo con archivos que revisaste en el portátil.</span></p></div>
+    <ul class="checks" data-group="enable"></ul>
+  </div></div>
+
+  <div class="step" id="p3-5"><div class="num">3.5</div><div class="body">
+    <h3><span class="en">Updating a plugin later</span><span class="es">Actualizar un plugin más adelante</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Replace the plugin's files on the laptop and restart Obsidian there. The sync carries them; when the phone shows that the plugin's files were updated, use its reload button or restart the app.</span><span class="es">Sustituye los archivos del plugin en el portátil y reinicia Obsidian allí. La sincronización los lleva; cuando el móvil avise de que los archivos del plugin cambiaron, usa su botón de recargar o reinicia la app.</span></dd>
+    </dl>
+  </div></div>
+</section>
+
+<!-- ============ PHASE 4 ============ -->
+<section class="block" id="phase4">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 4</span><span class="es">Fase 4</span></div>
+    <h2><span class="en">Daily operation</span><span class="es">Uso diario</span></h2>
+    <p class="sub"><span class="en">How to read the status, start a sync by hand and answer the configuration mismatch dialog without risk.</span><span class="es">Cómo leer el estado, lanzar una sincronización a mano y responder al diálogo de discrepancias de configuración sin riesgo.</span></p>
+  </div>
+
+  <div class="step" id="p4-1"><div class="num">4.1</div><div class="body">
+    <h3><span class="en">Status bar (laptop)</span><span class="es">Barra de estado (portátil)</span></h3>
+    <div class="tbl"><table>
+      <thead><tr><th><span class="en">Icon</span><span class="es">Icono</span></th><th><span class="en">Meaning</span><span class="es">Significado</span></th></tr></thead>
+      <tbody>
+        <tr><td>💤</td><td><span class="en">LiveSync enabled, waiting for changes. All good.</span><span class="es">LiveSync activo, esperando cambios. Todo bien.</span></td></tr>
+        <tr><td>⚡️</td><td><span class="en">Synchronisation in progress.</span><span class="es">Sincronizando.</span></td></tr>
+        <tr><td>⚠</td><td><span class="en">An error occurred: open the log or run <i>Review why synchronisation is paused</i>.</span><span class="es">Ha habido un error: mira el registro o lanza <i>Review why synchronisation is paused</i>.</span></td></tr>
+        <tr><td>⏹️</td><td><span class="en">Stopped.</span><span class="es">Detenida.</span></td></tr>
+        <tr><td>📲</td><td><span class="en">A finite remote operation is in progress.</span><span class="es">Hay una operación remota en curso.</span></td></tr>
+        <tr><td>🌐N</td><td><span class="en">About N remote requests in progress.</span><span class="es">Unas N peticiones remotas en curso.</span></td></tr>
+        <tr><td>↑ / ↓</td><td><span class="en">Chunks and metadata uploaded / downloaded.</span><span class="es">Fragmentos y metadatos subidos / bajados.</span></td></tr>
+        <tr><td>📥</td><td><span class="en">Transferred items not processed yet.</span><span class="es">Elementos recibidos aún sin procesar.</span></td></tr>
+        <tr><td>🔌</td><td><span class="en">Customisation items (configuration, snippets, plugins) being worked on.</span><span class="es">Elementos de personalización (configuración, snippets, plugins) en proceso.</span></td></tr>
+      </tbody>
+    </table></div>
+  </div></div>
+
+  <div class="step" id="p4-2"><div class="num">4.2</div><div class="body">
+    <h3><span class="en">Sync by hand, and find out why it paused</span><span class="es">Sincronizar a mano y saber por qué se pausó</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="en">Command palette: <b>Cmd+P</b> on the laptop; on the iPhone, swipe down on a note or use the menu button. Type <b>LiveSync</b>.</span><span class="es">Paleta de comandos: <b>Cmd+P</b> en el portátil; en el iPhone, desliza hacia abajo sobre una nota o usa el botón de menú. Escribe <b>LiveSync</b>.</span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en"><b>Sync now</b> starts a replication quietly. <b>Review why synchronisation is paused</b> explains a pause and offers the available actions.</span><span class="es"><b>Sync now</b> lanza una replicación sin ruido. <b>Review why synchronisation is paused</b> explica una pausa y ofrece las acciones disponibles.</span></dd>
+    </dl>
+  </div></div>
+
+  <div class="step" id="p4-3"><div class="num">4.3</div><div class="body">
+    <h3><span class="en">The configuration mismatch dialog</span><span class="es">El diálogo de discrepancia de configuración</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Some settings must match on every device. When this device and the server differ, LiveSync pauses instead of spreading the change and shows the settings that differ.</span><span class="es">Algunos ajustes deben coincidir en todos los dispositivos. Cuando este dispositivo y el servidor difieren, LiveSync se pausa en vez de propagar el cambio y muestra los ajustes que difieren.</span></dd>
+      <dt><span class="en">First</span><span class="es">Antes</span></dt><dd><span class="en">Make sure every device runs the same LiveSync version. Back up the vault.</span><span class="es">Asegúrate de que todos los dispositivos tienen la misma versión de LiveSync. Haz copia del vault.</span></dd>
+    </dl>
+    <div class="tbl"><table>
+      <thead><tr><th><span class="en">Option</span><span class="es">Opción</span></th><th><span class="en">What it does</span><span class="es">Qué hace</span></th><th><span class="en">Use it when</span><span class="es">Úsala cuando</span></th></tr></thead>
+      <tbody>
+        <tr><td><b>Apply settings to this device</b> <span class="badge ok"><span class="en">safe default</span><span class="es">opción segura</span></span></td><td><span class="en">This device takes the values shared on the server.</span><span class="es">Este dispositivo adopta los valores compartidos del servidor.</span></td><td><span class="en">You did not mean to change anything, or another device already holds the right values.</span><span class="es">No querías cambiar nada, u otro dispositivo ya tiene los valores correctos.</span></td></tr>
+        <tr><td><b>Update remote database settings</b> <span class="badge warn"><span class="en">deliberate</span><span class="es">deliberada</span></span></td><td><span class="en">This device's values become the shared ones for every device.</span><span class="es">Los valores de este dispositivo pasan a ser los compartidos por todos.</span></td><td><span class="en">You changed the setting on purpose here, every device is updated, and the others will then <i>Apply settings to this device</i>.</span><span class="es">Cambiaste el ajuste a propósito aquí, todos los dispositivos están actualizados y los demás harán luego <i>Apply settings to this device</i>.</span></td></tr>
+        <tr><td><b>Use configured settings</b></td><td><span class="en">While checking a remote profile: accepts the shared values stored on the remote.</span><span class="es">Al revisar un perfil remoto: acepta los valores compartidos guardados en el remoto.</span></td><td><span class="en">Same reasoning as <i>Apply settings to this device</i>.</span><span class="es">Mismo criterio que <i>Apply settings to this device</i>.</span></td></tr>
+        <tr><td><b>Dismiss</b></td><td><span class="en">Postpones the decision; sync stays paused.</span><span class="es">Pospone la decisión; la sincronización sigue en pausa.</span></td><td><span class="en">You need time, a backup or a second opinion.</span><span class="es">Necesitas tiempo, una copia o una segunda opinión.</span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note danger"><span class="nl"><span class="en">Always a deliberate decision</span><span class="es">Siempre una decisión deliberada</span></span><p><span class="en">Mismatches involving encryption, path obfuscation or file-name case handling are never automatic. If the option says a <i>Fetch</i> or <i>Rebuild</i> will follow, stop: make sure the authoritative copy is available and backed up first (Phase 5).</span><span class="es">Las discrepancias de cifrado, ofuscación de rutas o mayúsculas en nombres de archivo nunca son automáticas. Si la opción dice que vendrá un <i>Fetch</i> o un <i>Rebuild</i>, para: asegúrate antes de que la copia que manda está disponible y respaldada (fase 5).</span></p></div>
+    <div class="note info"><span class="nl"><span class="en">Example: Encrypt internal file Properties</span><span class="es">Ejemplo: Encrypt internal file Properties</span></span><p><span class="en">After an update a device may show <i>Encrypt internal file Properties</i> on while the server says off. With end-to-end encryption and Property Encryption already on: update every device, choose <b>Update remote database settings</b> on that device and <b>Apply settings to this device</b> on the others. It protects metadata written from then on; protecting older metadata needs a remote Rebuild, which is not required.</span><span class="es">Tras una actualización, un dispositivo puede mostrar <i>Encrypt internal file Properties</i> activado mientras el servidor dice desactivado. Con el cifrado de extremo a extremo y Property Encryption ya activos: actualiza todos los dispositivos, elige <b>Update remote database settings</b> en ese dispositivo y <b>Apply settings to this device</b> en los demás. Protege los metadatos que se escriban desde entonces; proteger los anteriores exige un Rebuild remoto, que no es necesario.</span></p></div>
+  </div></div>
+
+  <div class="step" id="p4-4"><div class="num">4.4</div><div class="body">
+    <h3><span class="en">Updating LiveSync</span><span class="es">Actualizar LiveSync</span></h3>
+    <dl class="facts">
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en">Update it on every device, one after the other, before accepting any settings change it proposes. If a device pauses for compatibility, update the others rather than resetting anything.</span><span class="es">Actualízalo en todos los dispositivos, uno tras otro, antes de aceptar cualquier cambio de ajustes que proponga. Si un dispositivo se pausa por compatibilidad, actualiza los demás en vez de reiniciar nada.</span></dd>
+    </dl>
+  </div></div>
+</section>
+
+<!-- ============ PHASE 5 ============ -->
+<section class="block" id="phase5">
+  <div class="sec-head">
+    <div class="eyebrow"><span class="en">Phase 5</span><span class="es">Fase 5</span></div>
+    <h2><span class="en">Recovery</span><span class="es">Recuperación</span></h2>
+    <p class="sub"><span class="en">When something goes wrong: first stop, then back up, then repair with the least destructive action. Names as they appear in LiveSync's settings.</span><span class="es">Cuando algo va mal: primero parar, luego copia, y después reparar con la acción menos destructiva. Nombres tal como aparecen en los ajustes de LiveSync.</span></p>
+  </div>
+
+  <div class="step" id="p5-1"><div class="num">5.1</div><div class="body">
+    <h3><span class="en">Back up a vault</span><span class="es">Hacer copia de un vault</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Laptop</span><span class="es">Portátil</span></dt><dd><span class="en">Quit Obsidian. In Finder, copy the whole vault folder (the hidden <code>.obsidian</code> folder goes with it) to a dated folder outside the vault, for example on an external disk.</span><span class="es">Cierra Obsidian. En el Finder, copia la carpeta entera del vault (la carpeta oculta <code>.obsidian</code> va dentro) a una carpeta con fecha fuera del vault, por ejemplo en un disco externo.</span></dd>
+      <dt>iPhone</dt><dd><span class="en">Usually not needed: the laptop holds the same notes once both show 💤. If the phone has notes that never reached the laptop: Files app → <b>On My iPhone → Obsidian</b>, long-press the vault folder → <b>Compress</b>, and AirDrop the zip to the laptop.</span><span class="es">Normalmente no hace falta: el portátil tiene las mismas notas cuando los dos muestran 💤. Si el móvil tiene notas que nunca llegaron al portátil: app Archivos → <b>En mi iPhone → Obsidian</b>, mantén pulsada la carpeta del vault → <b>Comprimir</b>, y pasa el zip al portátil por AirDrop.</span></dd>
+    </dl>
+    <ul class="checks" data-group="p5-backup"></ul>
+  </div></div>
+
+  <div class="step" id="p5-2"><div class="num">5.2</div><div class="body">
+    <h3><span class="en">Stop first</span><span class="es">Primero, parar</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Where</span><span class="es">Dónde</span></dt><dd><span class="path">Self-hosted LiveSync → Hatch → Scram Switches</span> · <span class="path">Maintenance → Scram!</span></dd>
+      <dt><span class="en">What</span><span class="es">Qué</span></dt><dd><span class="en"><b>Suspend file watching</b> stops LiveSync from picking up local changes; <b>Suspend database reflecting</b> stops it from writing received changes into your files. <b>Emergency restart</b> disables all synchronisation and restarts. <b>Lock Server</b> keeps the other devices from syncing while you repair. LiveSync may also stop by itself after a critical mismatch or sync error.</span><span class="es"><b>Suspend file watching</b> impide que LiveSync recoja cambios locales; <b>Suspend database reflecting</b> impide que escriba en tus archivos los cambios recibidos. <b>Emergency restart</b> desactiva toda la sincronización y reinicia. <b>Lock Server</b> impide que los demás dispositivos sincronicen mientras reparas. LiveSync también puede pararse solo tras una discrepancia crítica o un error de sincronización.</span></dd>
+      <dt><span class="en">Then</span><span class="es">Después</span></dt><dd><span class="en">Back up (5.1), and run <b>Review why synchronisation is paused</b> from the command palette to read the reason.</span><span class="es">Haz copia (5.1) y lanza <b>Review why synchronisation is paused</b> desde la paleta de comandos para leer el motivo.</span></dd>
+    </dl>
+  </div></div>
+
+  <div class="step" id="p5-3"><div class="num">5.3</div><div class="body">
+    <h3><span class="en">Repair, from least to most destructive</span><span class="es">Reparar, de menos a más destructivo</span></h3>
+    <div class="tbl"><table>
+      <thead><tr><th><span class="en">Action</span><span class="es">Acción</span></th><th><span class="en">What it does</span><span class="es">Qué hace</span></th><th><span class="en">Risk</span><span class="es">Riesgo</span></th></tr></thead>
+      <tbody>
+        <tr><td><b>Inspect conflicts and file/database differences</b><br><small>Hatch → Recovery and Repair</small></td><td><span class="en">Compares each file with the database, read-only (<i>Begin inspection</i>). Its wrench menu has destructive actions that ask for confirmation.</span><span class="es">Compara cada archivo con la base de datos, solo lectura (<i>Begin inspection</i>). Su menú de llave inglesa tiene acciones destructivas que piden confirmación.</span></td><td><span class="badge ok"><span class="en">read-only</span><span class="es">solo lectura</span></span></td></tr>
+        <tr><td><b>Resend</b><br><small>Maintenance → Syncing</small></td><td><span class="en">Sends every chunk this device has to the server again. A recovery tool, not routine.</span><span class="es">Vuelve a enviar al servidor todos los fragmentos que tiene este dispositivo. Herramienta de recuperación, no de rutina.</span></td><td><span class="badge ok"><span class="en">low</span><span class="es">bajo</span></span></td></tr>
+        <tr><td><b>Reset Synchronisation on This Device</b><br><small>Maintenance → Rebuilding Operations (Local)</small></td><td><span class="en">Rebuilds this device's local database from the server. The usual fix for one broken device.</span><span class="es">Reconstruye la base de datos local de este dispositivo desde el servidor. El arreglo habitual para un dispositivo roto.</span></td><td><span class="badge warn"><span class="en">this device</span><span class="es">este dispositivo</span></span></td></tr>
+        <tr><td><b>Resolve All conflicted files by the newer one</b><br><small>Hatch → Recovery and Repair</small></td><td><span class="en">Keeps the newest version of every conflicted file and deletes the others.</span><span class="es">Conserva la versión más reciente de cada archivo en conflicto y borra las demás.</span></td><td><span class="badge danger"><span class="en">loses versions</span><span class="es">pierde versiones</span></span></td></tr>
+        <tr><td><b>Recreate chunks for current Vault files</b><br><small>Hatch → Recovery and Repair</small></td><td><span class="en">Rebuilds chunks from the files as they are now. Only if this device's files are the right ones.</span><span class="es">Reconstruye los fragmentos a partir de los archivos tal como están ahora. Solo si los archivos de este dispositivo son los buenos.</span></td><td><span class="badge danger"><span class="en">no history</span><span class="es">sin historial</span></span></td></tr>
+        <tr><td><b>Overwrite Server Data with This Device's Files</b><br><small>Maintenance → Total Overhaul</small></td><td><span class="en">Rebuilds the local and remote databases from this vault. Every other device must then fetch again.</span><span class="es">Reconstruye las bases de datos local y remota a partir de este vault. Todos los demás dispositivos tendrán que volver a descargar.</span></td><td><span class="badge danger"><span class="en">all devices</span><span class="es">todos</span></span></td></tr>
+        <tr><td><b>Overwrite remote</b> · <b>Fresh Start Wipe</b><br><small>Maintenance → Rebuilding Operations (Remote Only)</small></td><td><span class="en">Replace or delete everything on the server.</span><span class="es">Sustituyen o borran todo lo que hay en el servidor.</span></td><td><span class="badge danger"><span class="en">server</span><span class="es">servidor</span></span></td></tr>
+        <tr><td><b>Back to non-configured</b> · <b>Delete all customisation sync data</b><br><small>Hatch → Reset</small></td><td><span class="en">Forget this device's LiveSync configuration · delete Customisation Sync data.</span><span class="es">Olvidar la configuración de LiveSync de este dispositivo · borrar los datos de Customisation Sync.</span></td><td><span class="badge danger"><span class="en">reset</span><span class="es">reinicio</span></span></td></tr>
+        <tr><td><b>Discard existing settings and databases</b> · <b>Delete local database to reset or uninstall Self-hosted LiveSync</b><br><small>Maintenance → Reset</small></td><td><span class="en">Reset this device's settings and local database, or remove the local database.</span><span class="es">Reiniciar los ajustes y la base local de este dispositivo, o borrar la base local.</span></td><td><span class="badge danger"><span class="en">reset</span><span class="es">reinicio</span></span></td></tr>
+      </tbody>
+    </table></div>
+    <div class="note danger"><span class="nl"><span class="en">Before any red action</span><span class="es">Antes de cualquier acción en rojo</span></span><p><span class="en">A backup of the vault that holds the right version, every device on the same LiveSync version, and the other devices stopped. If in doubt, stop at <i>Reset Synchronisation on This Device</i>.</span><span class="es">Una copia del vault que tiene la versión buena, todos los dispositivos con la misma versión de LiveSync y los demás dispositivos parados. Ante la duda, no pases de <i>Reset Synchronisation on This Device</i>.</span></p></div>
+  </div></div>
+
+  <div class="step" id="p5-4"><div class="num">5.4</div><div class="body">
+    <h3><span class="en">Lost passphrase or lost device</span><span class="es">Passphrase perdida o dispositivo perdido</span></h3>
+    <dl class="facts">
+      <dt><span class="en">Passphrase</span><span class="es">Passphrase</span></dt><dd><span class="en">No recovery: the server's data cannot be read without it. The notes still on a device are intact: back them up, then set up a new database from that device (Phase 1) with a new passphrase.</span><span class="es">No hay recuperación: los datos del servidor no se pueden leer sin ella. Las notas que siguen en un dispositivo están intactas: haz copia y monta una base nueva desde ese dispositivo (fase 1) con una passphrase nueva.</span></dd>
+      <dt><span class="en">Device</span><span class="es">Dispositivo</span></dt><dd><span class="en">The lost device holds the CouchDB credentials. Change that account's password on the server, then update it on the remaining devices (<b>Remote Configuration → CouchDB → Password</b>; the exact place may vary by version).</span><span class="es">El dispositivo perdido guarda las credenciales de CouchDB. Cambia la contraseña de esa cuenta en el servidor y actualízala en los dispositivos que quedan (<b>Remote Configuration → CouchDB → Password</b>; el sitio exacto puede variar según la versión).</span></dd>
+    </dl>
+  </div></div>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section class="block" id="glossary-sec">
+  <div class="sec-head">
+    <h2><span class="en">Glossary</span><span class="es">Glosario</span></h2>
+  </div>
+  <div class="gl-tools"><input type="search" id="gl-q" aria-label="Search · Buscar" placeholder="Search · Buscar"><span id="gl-count"></span></div>
+  <dl class="glossary" id="glossary"></dl>
+</section>
+
+<!-- ============ SOURCES ============ -->
+<section class="block" id="sources">
+  <div class="sec-head">
+    <h2><span class="en">Sources</span><span class="es">Fuentes</span></h2>
+    <p class="sub"><span class="en">Official documentation, printed as text on purpose: an isolated page cannot open links. Copy them into your browser.</span><span class="es">Documentación oficial, como texto a propósito: una página aislada no puede abrir enlaces. Cópialos en tu navegador.</span></p>
+  </div>
+  <div class="code"><div class="code-bar"><span>Self-hosted LiveSync</span><button class="copy" type="button">Copy</button></div><pre>https://github.com/vrtmrz/obsidian-livesync
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/quick_setup.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/setup_own_server.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/settings.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/tips/hidden-file-sync.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/tips/fast-setup.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/troubleshooting.md
+https://github.com/vrtmrz/obsidian-livesync/blob/main/docs/recovery.md</pre></div>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var KEY = "livesync-runbook:";
+  var storageOk = (function () { try { localStorage.setItem(KEY + "probe", "1"); localStorage.removeItem(KEY + "probe"); return true; } catch (e) { return false; } })();
+  function load(k, d) { if (!storageOk) return d; try { var v = localStorage.getItem(KEY + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } }
+  function save(k, v) { if (!storageOk) return; try { localStorage.setItem(KEY + k, JSON.stringify(v)); } catch (e) {} }
+  function $(s, r) { return (r || document).querySelector(s); }
+  function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
+
+  var DEF = { url: "", db: "", user: "", laptop: "", phone: "", plugins: "html-prototype-viewer-strict" };
+  var saved = load("params", {}) || {};
+  var state = {};
+  Object.keys(DEF).forEach(function (k) { state[k] = typeof saved[k] === "string" ? saved[k] : DEF[k]; });
+  var chk = load("checks", {}) || {};
+  var lang = "en";
+  function T(en, es) { return lang === "es" ? es : en; }
+
+  function laptop() { return state.laptop.trim() || T("laptop", "portátil"); }
+  function phone() { return state.phone.trim() || "iPhone"; }
+  function pluginIds() { return state.plugins.split(/[\s,]+/).map(function (s) { return s.trim(); }).filter(Boolean); }
+  var ID_RE = /^[a-z0-9][a-z0-9._-]*$/;
+  function reEscape(s) { return s.replace(/[.*+?^${}()|[\]\\\/]/g, "\\$&"); }
+  function patterns() {
+    var ids = pluginIds().filter(function (id) { return ID_RE.test(id); }).map(reEscape);
+    if (!ids.length) return { target: "", ignore: "" };
+    var alt = "(?:" + ids.join("|") + ")";
+    return {
+      target: "^\\.obsidian(?:$|/plugins(?:$|/" + alt + "(?:/|$)))",
+      ignore: "^\\.obsidian/plugins/" + alt + "/data\\.json$"
+    };
+  }
+
+  // Every check of the runbook. p: phase, s: step, g: group (ul.checks[data-group]), d: device.
+  function items() {
+    var L = laptop(), P = phone(), both = L + " · " + P;
+    return [
+      { id: "p0-https", p: 0, s: "0.1", g: "p0-https", d: L, en: "Server URL is https:// and the browser shows no certificate warning", es: "La URL del servidor es https:// y el navegador no muestra avisos de certificado" },
+      { id: "p0-cors", p: 0, s: "0.2", g: "p0-cors", d: L, en: "CouchDB [cors] includes app://obsidian.md and capacitor://localhost", es: "El [cors] de CouchDB incluye app://obsidian.md y capacitor://localhost" },
+      { id: "p0-user", p: 0, s: "0.3", g: "p0-user", d: L, en: "Sync account known; its password in the password manager", es: "Cuenta de sincronización clara; su contraseña en el gestor de contraseñas" },
+      { id: "p1-backup", p: 1, s: "1.1", g: "p1-before", d: L, en: "Vault backed up; no other sync service on this vault", es: "Copia del vault hecha; ningún otro servicio de sincronización en este vault" },
+      { id: "p1-secrets", p: 1, s: "1.1", g: "p1-before", d: L, en: "CouchDB password and vault passphrase stored in the password manager", es: "Contraseña de CouchDB y passphrase del vault guardadas en el gestor de contraseñas" },
+      { id: "p1-onb", p: 1, s: "1.2", g: "p1-install", d: L, en: "LiveSync installed and enabled; manual configuration chosen", es: "LiveSync instalado y activado; configuración manual elegida" },
+      { id: "p1-e2ee", p: 1, s: "1.3", g: "p1-e2ee", d: L, en: "End-to-End Encryption and Obfuscate Properties on", es: "End-to-End Encryption y Obfuscate Properties activados" },
+      { id: "p1-db", p: 1, s: "1.4", g: "p1-remote", d: L, en: "Create or connect to database and continue succeeded over HTTPS", es: "Create or connect to database and continue correcto por HTTPS" },
+      { id: "p1-init", p: 1, s: "1.5", g: "p1-init", d: L, en: "Server initialised; progress indicators cleared", es: "Servidor inicializado; indicadores de progreso desaparecidos" },
+      { id: "p1-note", p: 1, s: "1.6", g: "p1-test", d: L, en: "Test note uploaded (⚡️ then 💤); encryption on in Privacy & Encryption", es: "Nota de prueba subida (⚡️ y luego 💤); cifrado activo en Privacy & Encryption" },
+      { id: "p2-uri", p: 2, s: "2.1", g: "p2-uri", d: L, en: "Setup URI created; its passphrase stored apart", es: "Setup URI creado; su passphrase guardada aparte" },
+      { id: "p2-prep", p: 2, s: "2.2", g: "p2-prep", d: P, en: "Empty vault on the iPhone (not iCloud); LiveSync installed and enabled", es: "Vault vacío en el iPhone (no en iCloud); LiveSync instalado y activado" },
+      { id: "p2-join", p: 2, s: "2.3", g: "p2-join", d: P, en: "Joined with the Setup URI; fetch finished", es: "Unido con el Setup URI; descarga terminada" },
+      { id: "p2-both", p: 2, s: "2.4", g: "p2-test", d: both, en: "Test note arrives on the iPhone, and an edit there reaches the laptop", es: "La nota de prueba llega al iPhone, y una edición allí llega al portátil" },
+      { id: "p2-clean", p: 2, s: "2.4", g: "p2-test", d: both, en: "Every copy of the Setup URI deleted", es: "Todas las copias del Setup URI borradas" },
+      { id: "adv-l", p: 3, s: "3.1", g: "adv", d: L, en: "Enable advanced features on, the other two extra menus off", es: "Enable advanced features activado, los otros dos menús extra apagados" },
+      { id: "adv-p", p: 3, s: "3.1", g: "adv", d: P, en: "Enable advanced features on, the other two extra menus off", es: "Enable advanced features activado, los otros dos menús extra apagados" },
+      { id: "pat-l", p: 3, s: "3.2", g: "patterns", d: L, en: "Target and Ignore patterns added", es: "Target e Ignore patterns añadidos" },
+      { id: "pat-p", p: 3, s: "3.2", g: "patterns", d: P, en: "The same Target and Ignore patterns added", es: "Los mismos Target e Ignore patterns añadidos" },
+      { id: "hfs-l", p: 3, s: "3.3", g: "hfs", d: L, en: "Hidden File Sync enabled with Overwrite; scan finished", es: "Hidden File Sync activado con Overwrite; escaneo terminado" },
+      { id: "hfs-p", p: 3, s: "3.3", g: "hfs", d: P, en: "Vault backed up, then Hidden File Sync enabled with Fetch; app restarted", es: "Copia del vault hecha y Hidden File Sync activado con Fetch; app reiniciada" },
+      { id: "en-p", p: 3, s: "3.4", g: "enable", d: P, en: "Plugins enabled on the phone; originals they replace disabled", es: "Plugins activados en el móvil; los originales que sustituyen, desactivados" },
+      { id: "en-chk", p: 3, s: "3.4", g: "enable", d: P, en: "HTML Prototype Viewer (Strict): isolation-check.html shows GREEN on the phone", es: "HTML Prototype Viewer (Strict): isolation-check.html sale en VERDE en el móvil" },
+      { id: "p5-l", p: 5, s: "5.1", g: "p5-backup", d: L, en: "A dated copy of the laptop vault exists outside the vault", es: "Existe una copia con fecha del vault del portátil fuera del vault" },
+    ];
+  }
+  var PHASES = [["Phase 0 · Server checks", "Fase 0 · Comprobar el servidor"], ["Phase 1 · First device", "Fase 1 · Primer dispositivo"], ["Phase 2 · Add the iPhone", "Fase 2 · Añadir el iPhone"], ["Phase 3 · Plugins to the phone", "Fase 3 · Plugins al móvil"], ["Phase 4 · Daily operation", "Fase 4 · Uso diario"], ["Phase 5 · Recovery", "Fase 5 · Recuperación"]];
+
+  function renderChecks() {
+    var list = items();
+    var onlyPending = $("#only-pending").checked;
+    var rows = [], lastP = -1, done = 0;
+    list.forEach(function (it) {
+      var isDone = !!chk[it.id];
+      if (isDone) done++;
+      if (onlyPending && isDone) return;
+      if (it.p !== lastP) { rows.push('<tr class="phase-row"><td colspan="4">' + esc(T(PHASES[it.p][0], PHASES[it.p][1])) + "</td></tr>"); lastP = it.p; }
+      rows.push('<tr class="' + (isDone ? "done" : "") + '"><td><input type="checkbox" data-id="' + it.id + '"' + (isDone ? " checked" : "") + ' aria-label="' + esc(T(it.en, it.es)) + '"></td>' +
+        '<td><a href="#p' + it.s.replace(".", "-") + '">' + it.s + "</a></td>" +
+        '<td class="task">' + esc(T(it.en, it.es)) + "</td><td>" + esc(it.d) + "</td></tr>");
+    });
+    if (!rows.length) rows.push('<tr><td colspan="4">' + esc(T("All done.", "Todo hecho.")) + "</td></tr>");
+    $("#progress-rows").innerHTML = rows.join("");
+    $("#prog-total").textContent = done + " / " + list.length + " " + T("done", "hechas");
+    $$("ul.checks[data-group]").forEach(function (ul) {
+      var g = ul.getAttribute("data-group");
+      ul.innerHTML = list.filter(function (it) { return it.g === g; }).map(function (it) {
+        return '<li><label><input type="checkbox" data-id="' + it.id + '"' + (chk[it.id] ? " checked" : "") + "><span><b>" + esc(it.d) + "</b> · " + esc(T(it.en, it.es)) + "</span></label></li>";
+      }).join("");
+    });
+  }
+
+  function setK(k, v) { $$('[data-k="' + k + '"]').forEach(function (el) { el.textContent = v; }); }
+  function render() {
+    var pats = patterns();
+    $('[data-gen="target"]').textContent = pats.target || T("(add at least one valid plugin id)", "(añade al menos un id de plugin válido)");
+    $('[data-gen="ignore"]').textContent = pats.ignore || T("(add at least one valid plugin id)", "(añade al menos un id de plugin válido)");
+    var bad = pluginIds().filter(function (id) { return !ID_RE.test(id); });
+    var err = $("#p-plugins-err");
+    err.hidden = bad.length === 0 && pluginIds().length > 0;
+    err.textContent = bad.length ? T("Not a plugin id: ", "No es un id de plugin: ") + bad.join(", ") : T("Add at least one plugin id.", "Añade al menos un id de plugin.");
+    var same = state.laptop.trim() && state.laptop.trim() === state.phone.trim();
+    $("#p-names-err").hidden = !same;
+    $("#p-names-err").textContent = T("Device names must be different.", "Los nombres de dispositivo deben ser distintos.");
+    setK("url", state.url.trim() || T("‹your server URL›", "‹la URL de tu servidor›"));
+    setK("db", state.db.trim() || T("‹database name›", "‹nombre de la base›"));
+    setK("user", state.user.trim() || T("‹username›", "‹usuario›"));
+    setK("laptop", laptop());
+    setK("phone", phone());
+    renderChecks();
+    renderGlossary();
+  }
+
+  var GL = [
+    ["CouchDB", "The database server that holds the synchronised, encrypted copy of the vault. Yours, on your own machine.", "CouchDB", "El servidor de base de datos que guarda la copia sincronizada y cifrada del vault. El tuyo, en tu propia máquina."],
+    ["End-to-End Encryption (E2EE)", "Notes are encrypted on each device with the vault passphrase before they leave it. The server only sees encrypted data.", "Cifrado de extremo a extremo (E2EE)", "Las notas se cifran en cada dispositivo con la passphrase del vault antes de salir. El servidor solo ve datos cifrados."],
+    ["Vault passphrase", "The secret that encrypts the notes. Identical on every device; it cannot be recovered.", "Passphrase del vault", "El secreto que cifra las notas. Idéntica en todos los dispositivos; no se puede recuperar."],
+    ["Setup URI", "An encrypted link (obsidian://setuplivesync?settings=…) with the connection settings and credentials, used to add a device without typing them.", "Setup URI", "Un enlace cifrado (obsidian://setuplivesync?settings=…) con los ajustes de conexión y las credenciales, para añadir un dispositivo sin escribirlos."],
+    ["Setup URI passphrase", "Unlocks one Setup URI. Different from the vault passphrase; send it through a different channel than the URI.", "Passphrase del Setup URI", "Abre un Setup URI. Distinta de la passphrase del vault; se envía por un canal distinto del URI."],
+    ["Obfuscate Properties", "Also conceals the documents' properties on the server.", "Obfuscate Properties", "Oculta también en el servidor las propiedades de los documentos."],
+    ["Hidden File Sync", "Synchronises selected hidden files and folders, such as .obsidian/plugins/<id>. Limited here by Target and Ignore patterns.", "Hidden File Sync", "Sincroniza archivos y carpetas ocultos seleccionados, como .obsidian/plugins/<id>. Aquí se limita con Target e Ignore patterns."],
+    ["Target patterns", "Regular expressions: only hidden paths that match are synchronised. Parent folders must match too.", "Target patterns", "Expresiones regulares: solo se sincronizan las rutas ocultas que coinciden. Las carpetas padre también deben coincidir."],
+    ["Ignore patterns", "Regular expressions: matching hidden paths are never synchronised, even if a target pattern matches.", "Ignore patterns", "Expresiones regulares: las rutas ocultas que coinciden no se sincronizan nunca, aunque coincida un target pattern."],
+    ["Customisation Sync", "Another way to share settings, snippets, themes and plugins between devices. Not used here; never together with Hidden File Sync for the same files.", "Customisation Sync", "Otra forma de compartir ajustes, snippets, temas y plugins entre dispositivos. Aquí no se usa; nunca junto con Hidden File Sync para los mismos archivos."],
+    ["Overwrite (Hidden File Sync)", "When enabling Hidden File Sync: this device's matching hidden files become the reference.", "Overwrite (Hidden File Sync)", "Al activar Hidden File Sync: los archivos ocultos de este dispositivo que coinciden pasan a ser la referencia."],
+    ["Fetch", "Take the server's copy as the reference and replace the local one. For Hidden File Sync, only the matching hidden files.", "Fetch", "Tomar la copia del servidor como referencia y sustituir la local. En Hidden File Sync, solo los archivos ocultos que coinciden."],
+    ["Merge", "Combine both sides without a reference; may leave conflicts to review.", "Merge", "Combinar los dos lados sin referencia; puede dejar conflictos que revisar."],
+    ["Rebuild", "Recreate the remote database from one device. Destructive for changes that exist only on other devices.", "Rebuild", "Recrear la base de datos remota a partir de un dispositivo. Destructivo para los cambios que solo existen en otros dispositivos."],
+    ["Configuration mismatch", "Settings that must be equal on every device differ between this device and the server. LiveSync pauses until you decide.", "Discrepancia de configuración", "Ajustes que deben ser iguales en todos los dispositivos difieren entre este dispositivo y el servidor. LiveSync se pausa hasta que decidas."],
+    ["Advanced features", "Extra settings menus (Selector, Hidden Files). Only this one of the three Extra menus is on.", "Advanced features", "Menús de ajustes extra (Selector, Hidden Files). De los tres Extra menus, solo este está activo."],
+    ["approvals.json", "HTML Prototype Viewer (Strict): the laptop's list of trusted HTML contents. The phone can only trust what is in it.", "approvals.json", "HTML Prototype Viewer (Strict): la lista de contenidos HTML de confianza del portátil. El móvil solo puede confiar en lo que está en ella."],
+    ["data.json", "Each plugin's settings on this device. Kept per device: never synchronised here.", "data.json", "Los ajustes de cada plugin en este dispositivo. Propios de cada dispositivo: aquí nunca se sincronizan."]
+  ];
+  function renderGlossary() {
+    var q = ($("#gl-q").value || "").trim().toLowerCase();
+    var n = 0;
+    $("#glossary").innerHTML = GL.map(function (g) {
+      var term = T(g[0], g[2]), def = T(g[1], g[3]);
+      var show = !q || (term + " " + def).toLowerCase().indexOf(q) >= 0;
+      if (show) n++;
+      return '<div class="gl-item"' + (show ? "" : " hidden") + "><dt>" + esc(term) + "</dt><dd>" + esc(def) + "</dd></div>";
+    }).join("");
+    $("#gl-count").textContent = n + " / " + GL.length;
+  }
+  $("#gl-q").addEventListener("input", renderGlossary);
+
+  function setLang(l) {
+    lang = l === "es" ? "es" : "en";
+    document.documentElement.setAttribute("data-lang", lang);
+    document.documentElement.lang = lang;
+    $$(".lang-btn").forEach(function (b) { b.setAttribute("aria-pressed", b.getAttribute("data-l") === lang ? "true" : "false"); });
+    $$(".copy").forEach(function (b) { if (!b.classList.contains("done")) b.textContent = T("Copy", "Copiar"); });
+    save("lang", lang);
+    applyTheme();
+    render();
+  }
+  $$(".lang-btn").forEach(function (b) { b.addEventListener("click", function () { setLang(b.getAttribute("data-l")); }); });
+
+  // Theme: follows the system unless chosen here (the frame cannot see Obsidian's theme).
+  var THEMES = ["auto", "light", "dark"];
+  var theme = load("theme", "auto");
+  function applyTheme() {
+    if (THEMES.indexOf(theme) < 0) theme = "auto";
+    if (theme === "auto") document.documentElement.removeAttribute("data-theme");
+    else document.documentElement.setAttribute("data-theme", theme);
+    $("#theme-label").textContent = T("Theme: ", "Tema: ") + (theme === "auto" ? "Auto" : theme === "light" ? T("Light", "Claro") : T("Dark", "Oscuro"));
+  }
+  $("#theme-btn").addEventListener("click", function () {
+    theme = THEMES[(THEMES.indexOf(theme) + 1) % THEMES.length];
+    save("theme", theme);
+    applyTheme();
+  });
+
+  var FIELDS = { url: "#p-url", db: "#p-db", user: "#p-user", laptop: "#p-laptop", phone: "#p-phone", plugins: "#p-plugins" };
+  Object.keys(FIELDS).forEach(function (k) { $(FIELDS[k]).value = state[k]; });
+  $("#params-form").addEventListener("input", function () {
+    Object.keys(FIELDS).forEach(function (k) { state[k] = $(FIELDS[k]).value; });
+    save("params", state);
+    render();
+  });
+  $("#params-form").addEventListener("submit", function (ev) { ev.preventDefault(); });
+
+  document.addEventListener("change", function (ev) {
+    var t = ev.target;
+    if (t && t.matches && t.matches("input[type=checkbox][data-id]")) {
+      chk[t.getAttribute("data-id")] = t.checked;
+      save("checks", chk);
+      renderChecks();
+    } else if (t && t.id === "only-pending") {
+      renderChecks();
+    }
+  });
+
+  // Copy: clipboard when allowed, otherwise select the text so the user can copy it.
+  document.addEventListener("click", function (ev) {
+    var b = ev.target.closest && ev.target.closest(".copy");
+    if (!b) return;
+    var pre = b.closest(".code").querySelector("pre");
+    function ok() { b.textContent = T("Copied", "Copiado"); b.classList.add("done"); setTimeout(function () { b.classList.remove("done"); b.textContent = T("Copy", "Copiar"); }, 1600); }
+    function fallback() {
+      var r = document.createRange(); r.selectNodeContents(pre);
+      var s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+      var copied = false;
+      try { copied = document.execCommand("copy"); } catch (e) {}
+      if (copied) ok(); else b.textContent = T("Selected: press Cmd/Ctrl+C", "Seleccionado: pulsa Cmd/Ctrl+C");
+    }
+    try { navigator.clipboard.writeText(pre.textContent).then(ok, fallback); } catch (e) { fallback(); }
+  });
+
+  if (!storageOk) $("#storage-note").hidden = false;
+  setLang(load("lang", "en"));
+})();
+</script>
+</body>
+</html>

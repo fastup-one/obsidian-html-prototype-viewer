@@ -170,6 +170,9 @@
 			<tr><td><code>isolation-check.html</code></td><td>
 				<span class="en">A page that tells you by itself whether isolation works.</span>
 				<span class="es">Una página que dice sola si el aislamiento funciona.</span></td></tr>
+			<tr><td><code>livesync-runbook.html</code></td><td>
+				<span class="en">Step-by-step Self-hosted LiveSync setup: server checks, devices, plugins to the phone, daily use and recovery. Open it in Obsidian with this plugin.</span>
+				<span class="es">Configuración de Self-hosted LiveSync paso a paso: servidor, dispositivos, plugins al móvil, uso diario y recuperación. Ábrela en Obsidian con este plugin.</span></td></tr>
 			<tr><td><code>SHA256SUMS</code></td><td>
 				<span class="en">Fingerprints of every file in the package.</span>
 				<span class="es">Las huellas de todos los archivos del paquete.</span></td></tr>
@@ -241,6 +244,8 @@
 		</ol>
 		<p class="en" style="margin-top:10px">Only this plugin's files travel; its settings and the phone's own trust list (<code>data.json</code>) stay on each device.</p>
 		<p class="es" style="margin-top:10px">Solo viajan los archivos de este plugin; sus ajustes y la lista de confianza propia del móvil (<code>data.json</code>) se quedan en cada dispositivo.</p>
+		<p class="en">The full LiveSync setup, with every check, is in <code>livesync-runbook.html</code> (open it in Obsidian with this plugin).</p>
+		<p class="es">La configuración completa de LiveSync, con todas sus comprobaciones, está en <code>livesync-runbook.html</code> (ábrela en Obsidian con este plugin).</p>
 		<div class="note amber">
 			<p class="en"><strong>Trust on the phone needs your computer.</strong> On a phone, a trusted file gets <strong>full access to your vault</strong>: it can read, change and delete your notes and send them over the internet. So the phone only lets you trust a file that your computer already trusted with exactly the same content (the approvals travel in <code>approvals.json</code>). The phone then asks again, with a checkbox, and labels it <strong>Full vault access · trusted file</strong>. If the file changes, or you revoke it on the computer, the phone shows it isolated again within 30 seconds. Revoking on the computer also cancels the phone's own confirmation: to trust it there again, trust it on the computer and confirm again on the phone.</p>
 			<p class="es"><strong>La confianza en el móvil necesita tu ordenador.</strong> En el móvil, un archivo de confianza obtiene <strong>acceso completo a tu vault</strong>: puede leer, cambiar y borrar tus notas y enviarlas por internet. Por eso el móvil solo deja confiar en un archivo en el que tu ordenador ya confió con exactamente el mismo contenido (las aprobaciones viajan en <code>approvals.json</code>). El móvil vuelve a preguntar, con una casilla, y lo etiqueta <strong>Acceso completo al vault · archivo de confianza</strong>. Si el archivo cambia, o retiras la confianza en el ordenador, el móvil vuelve a mostrarlo aislado en 30 segundos. Retirarla en el ordenador también anula la confirmación del móvil: para volver a confiar allí, confía en el ordenador y vuelve a confirmar en el móvil.</p>

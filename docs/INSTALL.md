@@ -10,6 +10,7 @@ Requires **Obsidian 1.13 or newer** (Settings → About).
 |---|---|
 | `html-prototype-viewer-strict/` | The plugin: `main.js`, `manifest.json` and `styles.css`. This is what you install. |
 | `isolation-check.html` | A page that tells you by itself whether isolation works (green, amber or red). |
+| `livesync-runbook.html` | Step-by-step Self-hosted LiveSync setup (English/Spanish): server checks, devices, plugins to the phone, daily use and recovery. Open it in Obsidian with this plugin. |
 | `SHA256SUMS` | Fingerprints of every file in the package, to check it if you want. |
 | `INSTALL.md` / `INSTALL.es.md` / `INSTALL.html` | This guide. |
 
@@ -53,6 +54,8 @@ plugin's folder:
 3. **Sync Settings → Hidden Files → Enable Hidden File Sync**: choose **Overwrite** on the computer, **Fetch** on the
    phone. Restart Obsidian when asked.
 4. On the phone: **Settings → Community plugins** → enable **HTML Prototype Viewer (Strict)** and disable the original.
+
+The full LiveSync setup, with every check, is in `livesync-runbook.html` (open it in Obsidian with this plugin).
 
 Only this plugin's files travel; its settings and the phone's own trust list (`data.json`) stay on each device.
 

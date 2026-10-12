@@ -10,6 +10,7 @@ Necesitas **Obsidian 1.13 o posterior** (Ajustes → Acerca de).
 |---|---|
 | `html-prototype-viewer-strict/` | El plugin: `main.js`, `manifest.json` y `styles.css`. Es lo que se instala. |
 | `isolation-check.html` | Una página que dice sola si el aislamiento funciona (verde, ámbar o rojo). |
+| `livesync-runbook.html` | Configuración de Self-hosted LiveSync paso a paso (inglés/español): servidor, dispositivos, plugins al móvil, uso diario y recuperación. Ábrela en Obsidian con este plugin. |
 | `SHA256SUMS` | Las huellas de todos los archivos del paquete, por si quieres comprobarlas. |
 | `INSTALL.md` / `INSTALL.es.md` / `INSTALL.html` | Esta guía. |
 
@@ -55,6 +56,9 @@ la carpeta de este plugin:
    móvil. Reinicia Obsidian cuando te lo pida.
 4. En el móvil: **Ajustes → Complementos comunitarios** → activa **HTML Prototype Viewer (Strict)** y desactiva el
    original.
+
+La configuración completa de LiveSync, con todas sus comprobaciones, está en `livesync-runbook.html` (ábrela en Obsidian
+con este plugin).
 
 Solo viajan los archivos de este plugin; sus ajustes y la lista de confianza propia del móvil (`data.json`) se quedan
 en cada dispositivo.
