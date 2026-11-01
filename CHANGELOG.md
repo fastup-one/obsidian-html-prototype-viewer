@@ -1,5 +1,20 @@
 # Changelog
 
+## 1.0.1-strict.4
+
+- **Find in page** for isolated files: Ctrl/Cmd+F (inside the page or on its tab), the magnifier in the tab's header
+  (also on the phone) or the command «Find in the displayed prototype». Highlights every match, shows «3/17», Enter /
+  Shift+Enter (or the arrows) move between matches and scroll to them, Esc closes. Ignores capitals and accents, only
+  searches visible text and follows the page when it changes (a language switch, for example). Also inside embedded
+  previews in notes.
+- How: the plugin cannot read an isolated page (by design), so it injects its own find script into the page, right
+  after the CSP. The script runs with the page's privileges and adds none; matches are painted with the CSS Custom
+  Highlight API, without changing the page. The magnifier opens the bar with one fixed message from the plugin to its
+  isolated frame; the plugin never listens to frames. The bundle sweep allows exactly that one `postMessage`.
+- Trusted files run as their own page: the magnifier explains that find works in isolated files.
+- Packaging: `livesync-runbook.html`, a step-by-step Self-hosted LiveSync runbook (English and Spanish).
+- Test vault: `09-find.html`.
+
 ## 1.0.1-strict.3
 
 - On the phone, a withdrawn desktop approval also cancels the phone's own confirmation (with a message). Approving the

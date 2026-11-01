@@ -31,6 +31,11 @@ This fork:
   approval also cancels the phone's own confirmation: trusting again needs both steps again.
 - **Reviews before trusting.** The trust dialog lists what the file does — reaching for the surrounding window or
   Obsidian's API, network hosts, storage, dynamic or obfuscated code. A static check, not a guarantee.
+- **Finds text in isolated pages.** Ctrl/Cmd+F or the magnifier in the tab's header opens a find bar: every match
+  highlighted, «3/17», Enter/Shift+Enter to move, Esc to close; capitals and accents ignored. The plugin cannot read an
+  isolated page (that is the isolation), so it injects its own find script after the CSP: it runs with the page's
+  privileges and adds none. The magnifier opens it with one fixed message to the isolated frame; the plugin never
+  listens to frames. Trusted files run as their own page and have no find bar.
 - **Has no global switch** to turn isolation off. The upstream `Strict isolation` setting is
   gone; old settings load without granting anything.
 - **Always shows what is going on.** An «Isolated» line above every page explains what is blocked;
@@ -75,6 +80,7 @@ one view can own the `.html` extension. Requires Obsidian 1.13 or newer. The ful
   opens in a tab.
 - **Device widths.** Switch the render width between full width, desktop (1280 px),
   tablet (834 px) and mobile (390 px) from the tab toolbar.
+- **Find in page** (isolated files): Ctrl/Cmd+F, the magnifier in the tab's header, or a command.
 - **Live reload.** The preview refreshes whenever the file changes on disk. A trusted file is
   always re-evaluated when it changes, even with live reload off.
 - **Embed previews in notes** with an `html-preview` code block, with the same isolation, notices

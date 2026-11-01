@@ -36,6 +36,8 @@ Above every page there is a line with a shield and the word **Isolated**. That i
     computer has trusted that exact content. Once approved (and synced), the phone asks for its own confirmation with a
     checkbox, and the label reads **Full vault access · trusted file**. Revoke it on the computer: within 30 seconds the
     phone shows it isolated again and drops its own confirmation, so trusting it again needs both steps again.
+13. **09-find** → press **Ctrl+F** (**Cmd+F** on a Mac) or tap the **magnifier** at the top of the tab, and follow the
+    blue box: matches highlighted, «1/3», Enter moves to the next one, Esc closes. On the phone use the magnifier.
 
 What must **never** happen: a blank page with no explanation.
 
@@ -66,5 +68,7 @@ Cada página tiene un selector **EN / ES** arriba a la derecha.
     aprobación (ya sincronizada), el móvil pide su propia confirmación con una casilla y la etiqueta dice **Acceso
     completo al vault · archivo de confianza**. Retírala en el ordenador: en 30 segundos el móvil vuelve a aislado y
     anula su propia confirmación, así que volver a confiar exige otra vez los dos pasos.
+13. **09-find** → pulsa **Ctrl+F** (**Cmd+F** en Mac) o toca la **lupa** de arriba de la pestaña y sigue el recuadro
+    azul: coincidencias resaltadas, «1/3», Intro va a la siguiente, Esc cierra. En el móvil, usa la lupa.
 
 Lo que no debe pasar nunca: una página en blanco sin explicación.
