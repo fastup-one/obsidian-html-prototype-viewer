@@ -1,6 +1,6 @@
-import { FileView, Menu, TAbstractFile, TFile, WorkspaceLeaf, setIcon } from "obsidian";
+import { FileView, Menu, Notice, Scope, TAbstractFile, TFile, WorkspaceLeaf, setIcon } from "obsidian";
 import type HtmlPrototypeViewerPlugin from "./main";
-import { canOpenExternally, openExternally } from "./frame";
+import { canOpenExternally, openExternally, openFindBar } from "./frame";
 import { t } from "./i18n";
 import { renderFile } from "./render";
 import { VIEWPORTS, ViewportId, viewportById } from "./settings-model";
@@ -57,6 +57,13 @@ export class HtmlPrototypeView extends FileView {
 		}
 		this.trustActionEl = this.addAction("shield", t("action.trust"), () => this.toggleTrust());
 		this.updateTrustAction();
+		this.addAction("search", t("action.find"), () => this.openFind());
+		// Ctrl/Cmd+F while the view (not the page) has the focus; inside the page, the bar handles it.
+		const scope = this.scope ?? (this.scope = new Scope(this.app.scope));
+		scope.register(["Mod"], "f", () => {
+			this.openFind();
+			return false;
+		});
 
 		// Registered once for the lifetime of the view: `this.file` changes as the
 		// user navigates, so the comparison is made at call time instead.
@@ -112,6 +119,15 @@ export class HtmlPrototypeView extends FileView {
 
 	reload(): void {
 		if (this.file) void this.render(this.file, true);
+	}
+
+	/** Never a silent no-op: when the bar cannot open, a notice says why. */
+	openFind(): void {
+		if (this.decision === "trusted") {
+			new Notice(t("notice.find.trusted"), 8000);
+			return;
+		}
+		if (!this.frameEl || !openFindBar(this.frameEl)) new Notice(t("notice.find.nothing"));
 	}
 
 	private toggleTrust(): void {

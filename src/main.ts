@@ -62,6 +62,17 @@ export default class HtmlPrototypeViewerPlugin extends Plugin {
 		});
 
 		this.addCommand({
+			id: "find-in-prototype",
+			name: t("command.find"),
+			checkCallback: (checking: boolean) => {
+				const view = this.app.workspace.getActiveViewOfType(HtmlPrototypeView);
+				if (!view?.file) return false;
+				if (!checking) view.openFind();
+				return true;
+			},
+		});
+
+		this.addCommand({
 			id: "open-prototype-in-browser",
 			name: t("command.openExternally"),
 			checkCallback: (checking: boolean) => {

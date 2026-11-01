@@ -49,6 +49,9 @@ const UI = {
 		unapproved: "has not approved this exact content",
 		needsApproval: "Trust this file on your computer first",
 		withdrawn: "is isolated again: your computer withdrew its approval",
+		findAction: "Find in page",
+		noResults: "No results",
+		findTrusted: "only available in isolated files",
 		date: (text) => /[A-Z][a-z]{2} \d{1,2}, 2026/.test(text),
 	},
 	es: {
@@ -79,6 +82,9 @@ const UI = {
 		unapproved: "no ha aprobado este contenido exacto",
 		needsApproval: "Primero confía en este archivo en tu ordenador",
 		withdrawn: "vuelve a estar aislado: tu ordenador retiró su aprobación",
+		findAction: "Buscar en la página",
+		noResults: "Sin resultados",
+		findTrusted: "solo está disponible en archivos aislados",
 		date: (text) => /\d{1,2} [a-z]{3} 2026/.test(text) && !/\b(AM|PM)\b/.test(text),
 	},
 }[lang];
@@ -448,6 +454,132 @@ await attempt("phone rule (simulated)", async () => {
 	await sleep(1000);
 	check("phone: without approval no dialog opens, a notice explains why", (await js("__hpv.modal()")) === null && (await js("__hpv.notices()")).includes(UI.needsApproval), await js("__hpv.notices()"));
 	await phoneMode(false);
+});
+
+// --- 09: find in page -------------------------------------------------------------------------------
+
+const q = (text) => JSON.stringify(text);
+/** A real key press through DevTools. modifiers: 1 Alt, 2 Ctrl, 4 Meta, 8 Shift. */
+async function press(key, { code = key, vk = 0, text, modifiers = 0 } = {}) {
+	await cdp.send("Input.dispatchKeyEvent", { type: "keyDown", key, code, windowsVirtualKeyCode: vk, modifiers, ...(text ? { text } : {}) });
+	await cdp.send("Input.dispatchKeyEvent", { type: "keyUp", key, code, windowsVirtualKeyCode: vk, modifiers });
+}
+/** The find bar's state, read inside the page (its shadow root is open; matches are CSS highlights). */
+const FIND_STATE = `(() => {
+	const h = document.querySelector("hpv-find");
+	const reg = typeof CSS !== "undefined" ? CSS.highlights : null;
+	const all = reg && reg.get("hpv-find");
+	const cur = reg && reg.get("hpv-find-current");
+	const range = cur ? [...cur][0] : null;
+	return {
+		shown: !!h && getComputedStyle(h).display !== "none",
+		focused: !!h && document.activeElement === h && document.hasFocus(),
+		count: h?.shadowRoot?.querySelector(".count")?.textContent ?? null,
+		marks: all ? all.size : 0,
+		current: range ? range.toString() : null,
+		currentId: range ? range.startContainer.parentElement.closest("[id]")?.id ?? null : null,
+		scrollY: Math.round(scrollY),
+		width: h ? Math.round(h.getBoundingClientRect().width) : 0,
+		overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+	};
+})()`;
+
+await attempt("09 find in page", async () => {
+	await open("09-find.html");
+	await waitFor(async () => (await inFrame("document.body.innerText")).includes("Café au lait"), { what: "09 text" });
+	const logsBefore = cdp.logs.length;
+	const state = () => inFrame(FIND_STATE);
+	const until = (what, ok) => waitFor(async () => { const s = await state(); return ok(s) && s; }, { timeoutMs: 5000, what }).catch(() => state());
+	const setQuery = (text) => inFrame(`(() => { const i = document.querySelector("hpv-find").shadowRoot.querySelector("input"); i.value = ${q(text)}; i.dispatchEvent(new Event("input")); return true; })()`);
+	const action = `[...__hpv.leaf.view.containerEl.querySelectorAll(".view-action")].find((a) => a.getAttribute("aria-label") === ${q(UI.findAction)})`;
+
+	check("09 the tab's header has a find button", await js(`!!${action}`), null);
+	await js(`${action}.click(); true`);
+	let s = await until("find bar", (v) => v.shown && v.focused);
+	check("09 the find button opens the bar inside the page, with the focus in its field", s.shown && s.focused, s);
+
+	await cdp.send("Input.insertText", { text: "cafe" });
+	s = await until("3 matches", (v) => v.count === "1/3");
+	check("09 typed: 3 matches («1/3»), capitals and accents ignored, hidden text skipped", s.count === "1/3" && s.marks === 3 && s.currentId === "first", s);
+	await shot("09-find");
+	await press("Enter", { vk: 13, text: "\r" });
+	s = await until("2/3", (v) => v.count === "2/3");
+	check("09 Enter goes to the next match", s.count === "2/3" && s.currentId === "second", s);
+	await press("Enter", { vk: 13, text: "\r" });
+	s = await until("3/3", (v) => v.count === "3/3");
+	check("09 …and scrolls the page to it (third match at the bottom)", s.count === "3/3" && s.currentId === "third" && s.scrollY > 300, s);
+	await press("Enter", { vk: 13, text: "\r", modifiers: 8 });
+	s = await until("back to 2/3", (v) => v.count === "2/3");
+	check("09 Shift+Enter goes to the previous match", s.count === "2/3" && s.currentId === "second", s);
+
+	await setQuery("backup");
+	s = await until("backup", (v) => v.count === "1/1");
+	check("09 a word split across elements is found", s.count === "1/1" && s.current === "backup", s);
+
+	await setQuery("tomato");
+	s = await until("tomato", (v) => v.count === "1/1");
+	await inFrame(`(document.querySelector('.langsw button[data-l="es"]').click(), true)`);
+	const afterSwitch = await until("count follows the page", (v) => v.count === UI.noResults);
+	check(`09 the count follows the page: switched to ES, «tomato» is gone («${UI.noResults}»)`, s.count === "1/1" && afterSwitch.count === UI.noResults && afterSwitch.marks === 0, { before: s, after: afterSwitch });
+	await inFrame(`(document.querySelector('.langsw button[data-l="en"]').click(), true)`);
+
+	await press("Escape", { vk: 27 });
+	s = await until("bar closed", (v) => !v.shown);
+	check("09 Esc closes the bar and removes the highlights", !s.shown && s.marks === 0 && s.current === null, s);
+
+	await press("f", { code: "KeyF", vk: 70, modifiers: 2 });
+	s = await until("Ctrl+F in the page", (v) => v.shown && v.focused);
+	check("09 Ctrl+F inside the page opens the bar", s.shown && s.focused, s);
+	await press("Escape", { vk: 27 });
+	await until("closed", (v) => !v.shown);
+
+	// Focus outside the page: on the tab itself.
+	await js(`(__hpv.frame().blur(), __hpv.leaf.view.containerEl.focus(), true)`);
+	const outside = await js(`document.activeElement !== __hpv.frame()`);
+	await press("f", { code: "KeyF", vk: 70, modifiers: 2 });
+	s = await until("Ctrl+F on the view", (v) => v.shown);
+	check("09 Ctrl+F with the focus on the tab (outside the page) opens the bar too", outside && s.shown, { outside, s });
+	await press("Escape", { vk: 27 });
+	await until("closed", (v) => !v.shown);
+
+	check("09 command 'find' available on an HTML tab", await js(`__hpv.cmd("find-in-prototype")`), null);
+	s = await until("bar via command", (v) => v.shown);
+	check("09 …and it opens the bar", s.shown, s);
+
+	await js(`(__hpv.leaf.view.viewport = "mobile", __hpv.leaf.view.applyViewport(), true)`);
+	await sleep(500);
+	s = await state();
+	check("09 at the 390 px mobile width the bar fits, no horizontal scroll", s.shown && s.width > 0 && s.width <= 374 && s.overflow <= 1, s);
+	await shot("09-find-mobile");
+	await js(`(__hpv.leaf.view.viewport = "full", __hpv.leaf.view.applyViewport(), true)`);
+	await press("Escape", { vk: 27 });
+
+	const frameErrors = cdp.logs.slice(logsBefore).filter((l) => l.where === "frame" && l.type === "exception");
+	check("09 no script errors in the page while finding", frameErrors.length === 0, frameErrors.slice(0, 3));
+
+	// A trusted file runs as its own page: no bar, and a notice says why.
+	await js(`__hpv.cmd("trust-prototype")`);
+	await waitFor(() => js("__hpv.modal()"), { what: "trust dialog (09)" });
+	await js(`__hpv.clickModal(${q(UI.trust)})`);
+	await waitFor(() => js(`__hpv.status().includes(${q(UI.trusted)})`), { what: "09 trusted" });
+	await js(`(document.querySelectorAll(".notice").forEach((n) => n.remove()), true)`);
+	await js(`${action}.click(); true`);
+	await sleep(800);
+	const trustedBar = await inFrame(`!!document.querySelector("hpv-find")`);
+	check("09 trusted file: no bar, a notice explains that find works in isolated files", !trustedBar && (await js("__hpv.notices()")).includes(UI.findTrusted), await js("__hpv.notices()"));
+	await js(`__hpv.cmd("revoke-prototype-trust")`);
+	await waitFor(() => js(`__hpv.status().includes(${q(UI.isolated)})`), { what: "09 revoked" });
+
+	// Embedded block: Ctrl+F inside it opens its own bar.
+	await js(`__hpv.open("Note with preview.md")`);
+	await waitFor(() => js("!!__hpv.el().querySelector('.hpv-embed iframe.hpv-frame')"), { what: "embedded frame" });
+	const embedFrame = `__hpv.el().querySelector(".hpv-embed iframe.hpv-frame")`;
+	await waitFor(async () => /GREEN/.test(await cdp.frameEval(embedFrame, "document.title")), { what: "embed ready" });
+	await js(`(${embedFrame}.focus(), true)`);
+	await press("f", { code: "KeyF", vk: 70, modifiers: 2 });
+	const embed = await waitFor(async () => { const v = await cdp.frameEval(embedFrame, FIND_STATE); return v.shown && v; }, { timeoutMs: 5000, what: "embed bar" }).catch(() => cdp.frameEval(embedFrame, FIND_STATE));
+	check("09 embedded block in a note: Ctrl+F inside it opens its bar", embed.shown, embed);
+	await press("Escape", { vk: 27 });
 });
 
 // --- Upstream settings never grant trust ----------------------------------------------------------

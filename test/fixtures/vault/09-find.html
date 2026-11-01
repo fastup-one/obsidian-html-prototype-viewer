@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find in page</title>
+<style>
+	:root:not([data-lang="es"]) .es { display: none !important; }
+	:root[data-lang="es"] .en { display: none !important; }
+	body { font: 16px/1.5 system-ui, sans-serif; margin: 0; padding: 20px; background: #fafafa; color: #111; }
+	.langsw { display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 12px; }
+	.langsw button { font: 600 12px system-ui, sans-serif; padding: 3px 9px; border: 1px solid #bbb; border-radius: 6px; background: #fff; color: #333; cursor: pointer; }
+	.langsw button[aria-pressed="true"] { background: #333; border-color: #333; color: #fff; }
+	.box { padding: 12px 14px; border-radius: 10px; background: #e8f0fe; margin-bottom: 16px; }
+	.filler { color: #777; }
+	/* The words to type are drawn by CSS: visible, but not part of the page's text, so they never count as matches. */
+	.w::after { content: attr(data-w); }
+	@media (prefers-color-scheme: dark) {
+		body { background: #1e1e1e; color: #eee; }
+		.box { background: #1f3350; }
+		.langsw button { background: #2a2a2a; color: #ddd; border-color: #555; }
+	}
+</style>
+</head>
+<body>
+<div class="langsw" role="group" aria-label="Language · Idioma"><button type="button" data-l="en" aria-pressed="true">EN</button><button type="button" data-l="es" aria-pressed="false">ES</button></div>
+
+<div class="box">
+	<p class="en"><strong>Find in page.</strong> Press <strong>Ctrl+F</strong> (<strong>Cmd+F</strong> on a Mac), or tap the
+	<strong>magnifier</strong> at the top of the tab. A bar appears at the top right.</p>
+	<ol class="en">
+		<li>Type <code class="w" data-w="cafe"></code>: three matches, «1/3», highlighted in yellow (the current one in orange). Accents and
+		capitals do not matter.</li>
+		<li><strong>Enter</strong> goes to the next one, <strong>Shift+Enter</strong> to the previous one. The third is at
+		the very bottom: the page scrolls there.</li>
+		<li>Type <code class="w" data-w="backup"></code>: one match, although the word is split in two pieces of different style.</li>
+		<li>Type <code class="w" data-w="tomato"></code>, then switch this page to <strong>ES</strong>: the count changes to «No results»,
+		because the English sentence is no longer visible.</li>
+		<li><strong>Esc</strong> closes the bar and removes the highlights.</li>
+	</ol>
+	<p class="es"><strong>Buscar en la página.</strong> Pulsa <strong>Ctrl+F</strong> (<strong>Cmd+F</strong> en Mac) o toca
+	la <strong>lupa</strong> de la parte de arriba de la pestaña. Aparece una barra arriba a la derecha.</p>
+	<ol class="es">
+		<li>Escribe <code class="w" data-w="cafe"></code>: tres coincidencias, «1/3», resaltadas en amarillo (la actual en naranja). Ni los
+		acentos ni las mayúsculas importan.</li>
+		<li><strong>Intro</strong> va a la siguiente, <strong>Mayús+Intro</strong> a la anterior. La tercera está al final
+		del todo: la página baja hasta ella.</li>
+		<li>Escribe <code class="w" data-w="backup"></code>: una coincidencia, aunque la palabra está partida en dos trozos con estilo
+		distinto.</li>
+		<li>Escribe <code class="w" data-w="tomate"></code> y cambia esta página a <strong>EN</strong>: el contador pasa a «Sin resultados»,
+		porque la frase en español ya no se ve.</li>
+		<li><strong>Esc</strong> cierra la barra y quita los resaltados.</li>
+	</ol>
+</div>
+
+<p id="first">1 · Café au lait.</p>
+<p id="second">2 · CAFE NOIR.</p>
+<p style="display: none">Hidden: café (never counted).</p>
+<p id="split">Make a <b>back</b><i>up</i> first.</p>
+<p class="en" id="tomato">The word tomato is only in English.</p>
+<p class="es" id="tomate">La palabra tomate solo está en español.</p>
+
+<div class="filler">
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+	<p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer posuere erat a ante venenatis dapibus.</p>
+</div>
+
+<p id="third">3 · Il était une fois un café, at the very bottom.</p>
+
+<script>
+	(function () {
+		document.querySelectorAll(".langsw button").forEach(function (b) {
+			b.addEventListener("click", function () {
+				var lang = b.getAttribute("data-l") === "es" ? "es" : "en";
+				document.documentElement.setAttribute("data-lang", lang);
+				document.documentElement.lang = lang;
+				document.querySelectorAll(".langsw button").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+			});
+		});
+	})();
+</script>
+</body>
+</html>

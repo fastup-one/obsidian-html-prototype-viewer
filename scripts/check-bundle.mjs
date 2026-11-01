@@ -4,8 +4,9 @@
  * sinks or any URL. Generic for any Obsidian plugin repo.
  *
  * A plugin that genuinely needs one of these lists it in packaging.json, with the
- * reason, after the operator approved it:
- *   "bundleAllow": [{ "rule": "requestUrl", "reason": "talks to AnkiConnect on 127.0.0.1" }]
+ * reason, after the operator approved it. `max` (optional) caps the number of
+ * matching lines, so an approved exception cannot silently grow:
+ *   "bundleAllow": [{ "rule": "requestUrl", "reason": "talks to AnkiConnect on 127.0.0.1", "max": 1 }]
  *
  *   npm run build && node scripts/check-bundle.mjs
  */
@@ -36,10 +37,13 @@ const RULES = {
 
 const configPath = join(ROOT, "packaging.json");
 const config = existsSync(configPath) ? JSON.parse(readFileSync(configPath, "utf8")) : {};
-const allowed = new Map((config.bundleAllow ?? []).map((entry) => [entry.rule, entry.reason]));
-for (const [rule, reason] of allowed) {
+const allowed = new Map((config.bundleAllow ?? []).map((entry) => [entry.rule, entry]));
+for (const [rule, entry] of allowed) {
 	if (!(rule in RULES)) throw new Error(`packaging.json: unknown bundleAllow rule "${rule}"`);
-	if (!reason) throw new Error(`packaging.json: bundleAllow "${rule}" needs a reason`);
+	if (!entry.reason) throw new Error(`packaging.json: bundleAllow "${rule}" needs a reason`);
+	if (entry.max !== undefined && !(Number.isInteger(entry.max) && entry.max > 0)) {
+		throw new Error(`packaging.json: bundleAllow "${rule}" max must be a positive integer`);
+	}
 }
 
 const bundlePath = join(ROOT, "main.js");
@@ -55,13 +59,14 @@ for (const [rule, re] of Object.entries(RULES)) {
 	lines.forEach((line, i) => {
 		if (re.test(line)) hits.push(`main.js:${i + 1}: ${line.trim().slice(0, 120)}`);
 	});
+	const entry = allowed.get(rule);
 	if (hits.length === 0) {
 		console.log(`ok       ${rule}`);
-	} else if (allowed.has(rule)) {
-		console.log(`allowed  ${rule} (${hits.length}) — ${allowed.get(rule)}`);
+	} else if (entry && (entry.max === undefined || hits.length <= entry.max)) {
+		console.log(`allowed  ${rule} (${hits.length}${entry.max === undefined ? "" : ` of max ${entry.max}`}) — ${entry.reason}`);
 	} else {
 		failures += 1;
-		console.log(`FAIL     ${rule} (${hits.length})`);
+		console.log(`FAIL     ${rule} (${hits.length}${entry ? `, approved max ${entry.max}` : ""})`);
 		for (const hit of hits.slice(0, 5)) console.log(`         ${hit}`);
 	}
 }

@@ -12,6 +12,7 @@ const EN = {
 	"action.openExternally": "Open in browser",
 	"action.trust": "Isolated · trust this file…",
 	"action.revoke": "Not isolated · revoke trust",
+	"action.find": "Find in page",
 
 	"viewport.full": "Full width",
 	"viewport.desktop": "Desktop — 1280 px",
@@ -23,6 +24,16 @@ const EN = {
 	"command.insertEmbed": "Insert a prototype preview in the note",
 	"command.trust": "Trust the displayed HTML file…",
 	"command.revoke": "Revoke trust for the displayed HTML file",
+	"command.find": "Find in the displayed prototype",
+
+	"find.placeholder": "Find in page",
+	"find.previous": "Previous match (Shift+Enter)",
+	"find.next": "Next match (Enter)",
+	"find.close": "Close (Esc)",
+	"find.noResults": "No results",
+	"notice.find.trusted":
+		"Find is only available in isolated files. A trusted file runs as a page of its own and the viewer cannot add its search bar to it. Revoke the trust to search it here.",
+	"notice.find.nothing": "There is nothing to search: no page is displayed.",
 
 	"status.isolated": "Isolated",
 	"status.isolated.blocked":
@@ -126,6 +137,7 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"action.openExternally": "Ouvrir dans le navigateur",
 	"action.trust": "Isolé · faire confiance à ce fichier…",
 	"action.revoke": "Non isolé · retirer la confiance",
+	"action.find": "Rechercher dans la page",
 
 	"viewport.full": "Pleine largeur",
 	"viewport.desktop": "Desktop — 1280 px",
@@ -137,6 +149,16 @@ const FR: Partial<Record<TranslationKey, string>> = {
 	"command.insertEmbed": "Insérer un aperçu de prototype dans la note",
 	"command.trust": "Faire confiance au fichier HTML affiché…",
 	"command.revoke": "Retirer la confiance au fichier HTML affiché",
+	"command.find": "Rechercher dans le prototype affiché",
+
+	"find.placeholder": "Rechercher dans la page",
+	"find.previous": "Résultat précédent (Maj+Entrée)",
+	"find.next": "Résultat suivant (Entrée)",
+	"find.close": "Fermer (Échap)",
+	"find.noResults": "Aucun résultat",
+	"notice.find.trusted":
+		"La recherche n'est disponible que dans les fichiers isolés. Un fichier de confiance s'exécute comme une page à part et le visualiseur ne peut pas y ajouter sa barre de recherche. Retire la confiance pour y chercher ici.",
+	"notice.find.nothing": "Rien à rechercher : aucune page n'est affichée.",
 
 	"status.isolated": "Isolé",
 	"status.isolated.blocked":
@@ -238,6 +260,7 @@ const ES: Partial<Record<TranslationKey, string>> = {
 	"action.openExternally": "Abrir en el navegador",
 	"action.trust": "Aislado · confiar en este archivo…",
 	"action.revoke": "Sin aislamiento · retirar la confianza",
+	"action.find": "Buscar en la página",
 
 	"viewport.full": "Ancho completo",
 	"viewport.desktop": "Escritorio — 1280 px",
@@ -249,6 +272,16 @@ const ES: Partial<Record<TranslationKey, string>> = {
 	"command.insertEmbed": "Insertar una vista previa de prototipo en la nota",
 	"command.trust": "Confiar en el archivo HTML mostrado…",
 	"command.revoke": "Retirar la confianza al archivo HTML mostrado",
+	"command.find": "Buscar en el prototipo mostrado",
+
+	"find.placeholder": "Buscar en la página",
+	"find.previous": "Coincidencia anterior (Mayús+Intro)",
+	"find.next": "Coincidencia siguiente (Intro)",
+	"find.close": "Cerrar (Esc)",
+	"find.noResults": "Sin resultados",
+	"notice.find.trusted":
+		"La búsqueda solo está disponible en archivos aislados. Un archivo de confianza se ejecuta como una página aparte y el visor no puede añadirle su barra de búsqueda. Retira la confianza para buscar en él aquí.",
+	"notice.find.nothing": "No hay nada que buscar: no se muestra ninguna página.",
 
 	"status.isolated": "Aislado",
 	"status.isolated.blocked":

@@ -1,4 +1,6 @@
 import { App, TFile } from "obsidian";
+import { FIND_MESSAGE, findScript } from "./find";
+import { t } from "./i18n";
 import { RenderMode, assertSrcdocSafe, prepareSrcdoc, sandboxFlags } from "./strict";
 
 /**
@@ -32,7 +34,16 @@ export function createFrame(app: App, file: TFile, source: FrameSource): HTMLIFr
 		// Invariants 1 and 3: `srcdoc` only ever goes into a sandbox without
 		// `allow-same-origin` (it would inherit Obsidian's origin otherwise).
 		assertSrcdocSafe(flags);
-		frame.srcdoc = prepareSrcdoc(source.html).html;
+		frame.srcdoc = prepareSrcdoc(
+			source.html,
+			findScript({
+				placeholder: t("find.placeholder"),
+				previous: t("find.previous"),
+				next: t("find.next"),
+				close: t("find.close"),
+				noResults: t("find.noResults"),
+			}),
+		).html;
 	} else {
 		// `src` on purpose: the trusted frame gets the file's own `app://` origin,
 		// never Obsidian's.
@@ -43,6 +54,20 @@ export function createFrame(app: App, file: TFile, source: FrameSource): HTMLIFr
 		frame.src = url;
 	}
 	return frame;
+}
+
+/**
+ * Opens the find bar of an isolated frame: the plugin's only message to a frame
+ * (fixed, carries nothing, invariant 6). A frame that may share an origin is
+ * never messaged. The plugin listens to no message from any frame.
+ */
+export function openFindBar(frame: HTMLIFrameElement): boolean {
+	if (frame.sandbox.contains("allow-same-origin") || !frame.isConnected || !frame.contentWindow) return false;
+	// Focus first, so the bar's field can take it inside the frame.
+	frame.focus();
+	// An isolated frame's origin is opaque ("null"): "*" is the only target that reaches it.
+	frame.contentWindow.postMessage(FIND_MESSAGE, "*");
+	return true;
 }
 
 /**

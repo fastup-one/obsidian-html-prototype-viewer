@@ -66,15 +66,17 @@ export interface PreparedSrcdoc {
  * declares its own `<base href>`) at one point, before any of the file's
  * content: right after a leading doctype, otherwise at the very start. Never
  * before the doctype, which would switch the page to quirks mode.
+ * `ownScript`, the plugin's own code for the page (the find bar), goes right
+ * after them: under the CSP, before anything from the file.
  */
-export function prepareSrcdoc(html: string): PreparedSrcdoc {
+export function prepareSrcdoc(html: string, ownScript = ""): PreparedSrcdoc {
 	const source = html.charCodeAt(0) === 0xfeff ? html.slice(1) : html;
 	// Always matches, possibly with an empty string.
 	const trivia = (LEADING_TRIVIA_RE.exec(source) as RegExpExecArray)[0];
 	const doctype = DOCTYPE_RE.exec(source.slice(trivia.length));
 	const at = doctype ? trivia.length + doctype[0].length : 0;
 	const injectedBase = !BASE_HREF_RE.test(source.replace(COMMENT_RE, ""));
-	const injection = CSP_META + (injectedBase ? BASE_TAG : "");
+	const injection = CSP_META + (injectedBase ? BASE_TAG : "") + ownScript;
 	return { html: source.slice(0, at) + injection + source.slice(at), injectedBase };
 }
 

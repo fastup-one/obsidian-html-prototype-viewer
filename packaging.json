@@ -6,5 +6,11 @@
 		"isolation-check.html": "test/fixtures/vault/02-isolation.html",
 		"livesync-runbook.html": "docs/livesync-runbook.html"
 	},
-	"bundleAllow": []
+	"bundleAllow": [
+		{
+			"rule": "postMessage",
+			"reason": "one fixed message from the plugin to its own isolated frame, to open the find bar (approved by the operator 2026-11-02); the plugin never listens to messages from frames",
+			"max": 1
+		}
+	]
 }
